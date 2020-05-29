@@ -1,0 +1,5 @@
+rootProject.name='C-logic'
+include ':app'
+include ':c-logic-annotations'
+include ':c-logic-processor'
+include ':c-logic-base'
