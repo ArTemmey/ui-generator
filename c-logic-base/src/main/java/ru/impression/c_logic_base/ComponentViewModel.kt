@@ -1,10 +1,8 @@
 package ru.impression.c_logic_base
 
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -30,7 +28,16 @@ abstract class ComponentViewModel : ViewModel() {
     inline fun <reified T : ViewModel, R> mutableDuplicate(
         property: KProperty1<T, MutableLiveData<R>>,
         noinline observer: ((R) -> Unit) = {}
-    ) = Observable<R>(null, observer)
+    ) = Observable<R>(null, observer).apply {
+        propertyDuplicates.add(
+            PropertyDuplicate(
+                T::class,
+                property as KProperty1<Any?, LiveData<out Any?>>,
+                this,
+                true
+            )
+        )
+    }
 
     class PropertyDuplicate(
         val viewModelClass: KClass<out ViewModel>,
