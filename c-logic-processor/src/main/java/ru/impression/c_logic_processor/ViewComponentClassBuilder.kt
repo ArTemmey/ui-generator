@@ -6,11 +6,13 @@ import ru.impression.c_logic_annotations.Bindable
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
 
 class ViewComponentClassBuilder(
     private val processingEnv: ProcessingEnvironment,
+    private val scheme: TypeElement,
     private val resultClassName: String,
     private val resultClassPackage: String,
     private val superclass: TypeName,
@@ -24,26 +26,10 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("context")
         addSuperclassConstructorParameter("attrs")
         addSuperclassConstructorParameter("defStyleAttr")
-        addProperty(
-            PropertySpec.builder(
-                "implementation",
-                ClassName("ru.impression.c_logic_base", "ViewComponentImplementation")
-            ).initializer(
-                CodeBlock.of(
-                    "%T(%L, %T.%N(%T.%N(%N), %L, %L), %L)",
-                    ClassName("ru.impression.c_logic_base", "ViewComponentImplementation"),
-                    "this",
-                    bindingClass,
-                    "inflate",
-                    ClassName("android.view", "LayoutInflater"),
-                    "from",
-                    "context",
-                    "this",
-                    "true",
-                    "$viewModelClass::class"
-                )
-            ).build()
-        )
+        addProperty(buildSchemeProperty())
+        addProperty(buildBindingProperty())
+        addProperty(buildViewModelProperty())
+        addProperty(buildBindingManagerProperty())
         addType(buildCompanionObject())
         build()
     }
@@ -62,6 +48,56 @@ class ViewComponentClassBuilder(
         addAnnotation(JvmOverloads::class)
         build()
     }
+
+    private fun buildSchemeProperty() =
+        with(PropertySpec.builder("scheme", scheme.asClassName())) {
+            initializer("%T()", scheme.asClassName())
+            build()
+        }
+
+    private fun buildBindingProperty() =
+        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
+            initializer(
+                "%T.%N(%T.%N(%N), %L, %L)", bindingClass,
+                "inflate",
+                ClassName("android.view", "LayoutInflater"),
+                "from",
+                "context",
+                "this",
+                "true"
+            )
+            build()
+        }
+
+    private fun buildViewModelProperty() =
+        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+            initializer(
+                "%T.%N(%L, %L)",
+                ClassName("ru.impression.c_logic_base", "ComponentViewModel"),
+                "create",
+                "$viewModelClass::class",
+                "this"
+            )
+            build()
+        }
+
+
+    private fun buildBindingManagerProperty() =
+        with(
+            PropertySpec.builder(
+                "bindingManager",
+                ClassName("ru.impression.c_logic_base", "BindingManager")
+            )
+        ) {
+            initializer(
+                "%T(%L, %N, %N)",
+                ClassName("ru.impression.c_logic_base", "BindingManager"),
+                "this",
+                "binding",
+                "viewModel"
+            )
+            build()
+        }
 
     private fun buildCompanionObject(): TypeSpec = with(TypeSpec.companionObjectBuilder()) {
         val viewModelEnclosedElements =

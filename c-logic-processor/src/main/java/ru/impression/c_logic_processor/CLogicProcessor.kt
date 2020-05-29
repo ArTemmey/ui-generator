@@ -39,6 +39,7 @@ class CLogicProcessor : AbstractProcessor() {
                     "android.view.ViewGroup" -> {
                         resultClass = ViewComponentClassBuilder(
                             processingEnv,
+                            element,
                             resultClassName,
                             resultClassPackage,
                             superclass.asTypeName(),

@@ -15,10 +15,10 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
-class ViewComponentImplementation(
-    private val view: ViewGroup,
+class BindingManager(
+    private val owner: View,
     binding: ViewDataBinding,
-    viewModelClass: KClass<out ComponentViewModel>
+    private val viewModel: ComponentViewModel
 ) {
 
     private val twoWayBindingObservables =
@@ -26,12 +26,25 @@ class ViewComponentImplementation(
 
     private val duplicatedObservables = HashMap<LiveData<out Any?>, ArrayList<Observer<out Any?>>>()
 
-    private val viewModel = (if (viewModelClass.findAnnotation<SharedViewModel>() != null)
-        view.activity?.let { ViewModelProvider(it)[viewModelClass.java] }
-    else
-        viewModelClass.createInstance())
-        ?.apply {
-            viewModelClass.members.forEach { member ->
+    init {
+        owner.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewDetachedFromWindow(v: View?) {
+                duplicatedObservables.forEach { entry ->
+                    entry.value.forEach { entry.key.removeObserver(it as Observer<Any?>) }
+                }
+                duplicatedObservables.clear()
+            }
+
+            override fun onViewAttachedToWindow(v: View?) {
+                viewModel.propertyDuplicates.forEach { propertyDuplicate ->
+                    propertyDuplicate.property.get(ViewModelProvider(owner.activity!!)[propertyDuplicate.viewModelClass.java])
+                        .observe { propertyDuplicate.target.value = it }
+                }
+            }
+
+        })
+        viewModel.apply {
+            viewModel::class.members.forEach { member ->
                 if (member.findAnnotation<Bindable>()?.twoWay == true) {
                     (member as KProperty1<Any?, ComponentViewModel.Observable<Any?>>).get(this)
                         .observeForever { twoWayBindingObservables[member.name]?.value = it }
@@ -41,32 +54,14 @@ class ViewComponentImplementation(
                 if (propertyDuplicate.isMutable) {
                     propertyDuplicate.target.observeForever {
                         (propertyDuplicate.property.get(
-                            ViewModelProvider(view.activity!!)[propertyDuplicate.viewModelClass.java]
+                            ViewModelProvider(owner.activity!!)[propertyDuplicate.viewModelClass.java]
                         ) as MutableLiveData<out Any?>).value = it
                     }
                 }
             }
         }
-        ?.also { binding.setViewModel(it) }
-
-    init {
-        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewDetachedFromWindow(v: View?) {
-                duplicatedObservables.forEach { entry ->
-                    entry.value.forEach { entry.key.removeObserver(it as Observer<Any?>) }
-                }
-                duplicatedObservables.clear()
-            }
-
-            override fun onViewAttachedToWindow(v: View?) {
-                viewModel!!.propertyDuplicates.forEach { propertyDuplicate ->
-                    propertyDuplicate.property.get(ViewModelProvider(view.activity!!)[propertyDuplicate.viewModelClass.java])
-                        .observe { propertyDuplicate.target.value = it }
-                }
-            }
-
-        })
-        binding.lifecycleOwner = view.activity
+        binding.setViewModel(viewModel)
+        binding.lifecycleOwner = owner.activity
     }
 
     fun onValueBound(name: String, value: ComponentViewModel.Observable<out Any>) {
@@ -86,7 +81,7 @@ class ViewComponentImplementation(
     }
 
     fun <T> LiveData<T>.observe(onChanged: (T) -> Unit) {
-        observe(view.activity!!, Observer(onChanged).also {
+        observe(owner.activity!!, Observer(onChanged).also {
             val list = duplicatedObservables[this]
                 ?: ArrayList<Observer<out Any?>>().also { duplicatedObservables[this] = it }
             list.add(it)

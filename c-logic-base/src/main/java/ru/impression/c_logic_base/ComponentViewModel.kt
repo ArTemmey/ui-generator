@@ -1,10 +1,13 @@
 package ru.impression.c_logic_base
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.view.View
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.*
+import ru.impression.c_logic_annotations.SharedViewModel
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.findAnnotation
 
 abstract class ComponentViewModel : ViewModel() {
 
@@ -45,6 +48,21 @@ abstract class ComponentViewModel : ViewModel() {
         val target: Observable<out Any?>,
         val isMutable: Boolean
     )
+
+    companion object {
+
+        fun <T : ComponentViewModel> create(viewModelClass: KClass<T>, owner: Any): T {
+            val activity =
+                (owner as? View)?.activity ?: (owner as? Fragment)?.activity
+                ?: return viewModelClass.createInstance()
+            return when {
+                viewModelClass.findAnnotation<SharedViewModel>() != null ->
+                    ViewModelProvider(activity)[viewModelClass.java]
+                owner is ViewModelStoreOwner -> ViewModelProvider(owner)[viewModelClass.java]
+                else -> viewModelClass.createInstance()
+            }
+        }
+    }
 
     class Observable<T>(value: T? = null, observer: ((T) -> Unit)? = null) :
         MutableLiveData<T>() {
