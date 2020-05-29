@@ -13,5 +13,5 @@ class MyLayout : ComponentScheme<FrameLayout, MyLayoutBinding, MyLayoutViewModel
 @SharedViewModel
 class MyLayoutViewModel : ComponentViewModel() {
 
-    val text = Observable<String>()
+    val text = Data<String>()
 }

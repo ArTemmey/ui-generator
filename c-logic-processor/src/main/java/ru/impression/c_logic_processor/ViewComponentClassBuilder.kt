@@ -125,18 +125,16 @@ class ViewComponentClassBuilder(
                             if (bindableAnnotation.twoWay)
                                 ClassName(
                                     "ru.impression.c_logic_base.ComponentViewModel",
-                                    "Observable"
+                                    "Data"
                                 ).parameterizedBy(propertyType.asTypeName())
                             else
                                 propertyType.asTypeName()
                         )
                         .addCode(
-                            "%N.%N.%N(%S, %N)",
-                            "view",
-                            "implementation",
-                            "onValueBound",
-                            propertyName,
-                            "value"
+                            """
+        |view.bindingManager.removeTwoWayBindableData(%N)
+        |view.viewModel.%N.set(value)
+        |view.bindingManager.addTwoWayBindableData(%N, value)""", propertyName, propertyName
                         )
                         .build()
                 )

@@ -12,7 +12,6 @@ import ru.impression.c_logic_annotations.Bindable
 import ru.impression.c_logic_annotations.SharedViewModel
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
 class BindingManager(
@@ -22,7 +21,7 @@ class BindingManager(
 ) {
 
     private val twoWayBindingObservables =
-        HashMap<String, ComponentViewModel.Observable<out Any?>>()
+        HashMap<String, ComponentViewModel.Data<out Any?>>()
 
     private val duplicatedObservables = HashMap<LiveData<out Any?>, ArrayList<Observer<out Any?>>>()
 
@@ -46,7 +45,7 @@ class BindingManager(
         viewModel.apply {
             viewModel::class.members.forEach { member ->
                 if (member.findAnnotation<Bindable>()?.twoWay == true) {
-                    (member as KProperty1<Any?, ComponentViewModel.Observable<Any?>>).get(this)
+                    (member as KProperty1<Any?, ComponentViewModel.Data<Any?>>).get(this)
                         .observeForever { twoWayBindingObservables[member.name]?.value = it }
                 }
             }
@@ -64,7 +63,7 @@ class BindingManager(
         binding.lifecycleOwner = owner.activity
     }
 
-    fun onValueBound(name: String, value: ComponentViewModel.Observable<out Any>) {
+    fun onValueBound(name: String, value: ComponentViewModel.Data<out Any>) {
         twoWayBindingObservables.remove(name)
         notifyBindableObservable(name, value.value)
         twoWayBindingObservables[name] = value
@@ -76,7 +75,7 @@ class BindingManager(
 
     private fun notifyBindableObservable(name: String, value: Any?) {
         (viewModel!!::class.members.first { it.name == name }
-                as KProperty1<Any?, ComponentViewModel.Observable<Any?>>).get(viewModel).value =
+                as KProperty1<Any?, ComponentViewModel.Data<Any?>>).get(viewModel).value =
             value
     }
 

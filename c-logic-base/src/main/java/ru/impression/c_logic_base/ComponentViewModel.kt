@@ -17,7 +17,7 @@ abstract class ComponentViewModel : ViewModel() {
     inline fun <reified T : ViewModel, R> duplicate(
         property: KProperty1<T, LiveData<R>>,
         noinline observer: ((R) -> Unit) = {}
-    ) = Observable<R>(null, observer).apply {
+    ) = Data<R>(null, observer).apply {
         propertyDuplicates.add(
             PropertyDuplicate(
                 T::class,
@@ -31,7 +31,7 @@ abstract class ComponentViewModel : ViewModel() {
     inline fun <reified T : ViewModel, R> mutableDuplicate(
         property: KProperty1<T, MutableLiveData<R>>,
         noinline observer: ((R) -> Unit) = {}
-    ) = Observable<R>(null, observer).apply {
+    ) = Data<R>(null, observer).apply {
         propertyDuplicates.add(
             PropertyDuplicate(
                 T::class,
@@ -45,7 +45,7 @@ abstract class ComponentViewModel : ViewModel() {
     class PropertyDuplicate(
         val viewModelClass: KClass<out ViewModel>,
         val property: KProperty1<Any?, LiveData<out Any?>>,
-        val target: Observable<out Any?>,
+        val target: Data<out Any?>,
         val isMutable: Boolean
     )
 
@@ -64,12 +64,16 @@ abstract class ComponentViewModel : ViewModel() {
         }
     }
 
-    class Observable<T>(value: T? = null, observer: ((T) -> Unit)? = null) :
+    class Data<T>(value: T? = null, onChange: ((T) -> Unit)? = null) :
         MutableLiveData<T>() {
 
         init {
-            observer?.let { observeForever { it(it) } }
+            onChange?.let { observeForever { it(it) } }
         }
+
+        fun get() = value
+
+        fun set(value: T?) = setValue(value)
 
         override fun setValue(value: T?) {
             if (value != this.value) super.setValue(value)
