@@ -32,10 +32,16 @@ class ViewComponentClassBuilder(
                 ClassName("ru.impression.c_logic_base", "ViewComponentImplementation")
             ).initializer(
                 CodeBlock.of(
-                    "%T(%L, %L, %L)",
+                    "%T(%L, %T.%N(%T.%N(%N), %L, %L), %L)",
                     ClassName("ru.impression.c_logic_base", "ViewComponentImplementation"),
                     "this",
-                    "$bindingClass::class",
+                    bindingClass,
+                    "inflate",
+                    ClassName("android.view", "LayoutInflater"),
+                    "from",
+                    "context",
+                    "this",
+                    "true",
                     "$viewModelClass::class"
                 )
             ).build()

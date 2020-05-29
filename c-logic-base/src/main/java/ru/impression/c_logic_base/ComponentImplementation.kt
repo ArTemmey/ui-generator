@@ -11,30 +11,35 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
-
 class ViewComponentImplementation(
     view: ViewGroup,
-    bindingClass: KClass<out ViewDataBinding>,
+    binding: ViewDataBinding,
     viewModelClass: KClass<out ComponentViewModel>
 ) {
 
     private val outerObservables = HashMap<String, ComponentViewModel.Observable<out Any>?>()
 
-    private val viewModel = if (viewModelClass.findAnnotation<SharedViewModel>() != null)
-        ViewModelProvider(view.activity)[viewModelClass.java]
+    private val viewModel = (if (viewModelClass.findAnnotation<SharedViewModel>() != null)
+        view.activity?.let { ViewModelProvider(it)[viewModelClass.java] }
     else
-        viewModelClass.createInstance()
-            .apply {
-                viewModelClass.members.forEach { member ->
-                    if (member.findAnnotation<Bindable>()?.inverse == true) {
-                        (member as KProperty1<Any, ComponentViewModel.Observable<Any>>).get(this)
-                            .observeForever { outerObservables[member.name]?.value = it }
-                    }
+        viewModelClass.createInstance())
+        ?.apply {
+            viewModelClass.members.forEach { member ->
+                if (member.findAnnotation<Bindable>()?.inverse == true) {
+                    (member as KProperty1<Any, ComponentViewModel.Observable<Any>>).get(this)
+                        .observeForever { outerObservables[member.name]?.value = it }
                 }
             }
+            propertyDuplicates.forEach { propertyDuplicate ->
+                view.activity?.let {
+                    propertyDuplicate.property.get(ViewModelProvider(it)[propertyDuplicate.viewModelClass.java])
+                }
+            }
+        }
+        ?.also { binding.setViewModel(it) }
 
     init {
-        bindingClass.inflate(view.context, viewModel, view.activity, view, true)
+        binding.lifecycleOwner = view.activity
     }
 
     fun onValueBound(name: String, value: ComponentViewModel.Observable<out Any>) {
@@ -48,7 +53,7 @@ class ViewComponentImplementation(
     }
 
     private fun notifyBindableObservable(name: String, value: Any?) {
-        (viewModel::class.members.first { it.name == name }
+        (viewModel!!::class.members.first { it.name == name }
                 as KProperty1<Any, ComponentViewModel.Observable<Any>>).get(viewModel).value =
             value
     }
@@ -56,7 +61,7 @@ class ViewComponentImplementation(
 
 class FragmentComponentImplementation(
     private val fragment: Fragment,
-    private val bindingClass: KClass<out ViewDataBinding>,
+    private val binding: ViewDataBinding,
     private val viewModelClass: KClass<out ComponentViewModel>
 ) {
 
@@ -69,6 +74,8 @@ class FragmentComponentImplementation(
         )[viewModelClass.java]
     }
 
-    fun createView(container: ViewGroup?) =
-        bindingClass.inflate(fragment.activity!!, viewModel, fragment, container, false).root
+    fun onCreateView(container: ViewGroup?) = binding.apply {
+        lifecycleOwner = fragment
+        setViewModel(viewModel)
+    }.root
 }

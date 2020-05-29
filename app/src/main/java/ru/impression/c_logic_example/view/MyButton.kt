@@ -12,6 +12,10 @@ class MyButton : ComponentScheme<FrameLayout, MyButtonBinding, MyButtonViewModel
 
 class MyButtonViewModel : ComponentViewModel() {
 
-    @Bindable
+    @Bindable(true)
     val text = Observable<String>()
+
+    fun onMyButtonClick() {
+        text.value = "HELLO WORLD!"
+    }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
@@ -8,13 +9,20 @@
             type="ru.impression.c_logic_example.view.MyLayoutViewModel" />
     </data>
 
-    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TextView
+       <ru.impression.c_logic_example.view.MyTextComponent
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"/>
+
+        <ru.impression.c_logic_example.view.MyButtonComponent
+            text="@{viewModel.text}"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""/>
-    </FrameLayout>
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
 </layout>
