@@ -4,34 +4,58 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import ru.impression.c_logic_annotations.Bindable
 import java.util.*
-import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
 
 class ViewComponentClassBuilder(
-    private val processingEnv: ProcessingEnvironment,
-    private val scheme: TypeElement,
-    private val resultClassName: String,
-    private val resultClassPackage: String,
-    private val superclass: TypeName,
-    private val bindingClass: TypeMirror,
-    private val viewModelClass: TypeMirror
+    scheme: TypeElement,
+    resultClassName: String,
+    resultClassPackage: String,
+    superclass: TypeName,
+    bindingClass: TypeMirror,
+    viewModelClass: TypeMirror
+) : ComponentClassBuilder(
+    scheme,
+    resultClassName,
+    resultClassPackage,
+    superclass,
+    bindingClass,
+    viewModelClass
 ) {
 
-    fun build(): TypeSpec = with(TypeSpec.classBuilder(resultClassName)) {
-        superclass(superclass)
+    override fun buildObservingHelperProperty() = with(
+        PropertySpec.builder(
+            "observingHelper",
+            ClassName("ru.impression.c_logic_base", "ViewObservingHelper")
+        )
+    ) {
+        initializer("ViewObservingHelper(this)")
+        build()
+    }
+
+    override fun TypeSpec.Builder.buildRestMembers() {
         primaryConstructor(buildConstructor())
         addSuperclassConstructorParameter("context")
         addSuperclassConstructorParameter("attrs")
         addSuperclassConstructorParameter("defStyleAttr")
-        addProperty(buildSchemeProperty())
         addProperty(buildBindingProperty())
-        addProperty(buildViewModelProperty())
-        addProperty(buildBindingManagerProperty())
+        addProperty(buildTwoWayBindingObservablesProperty())
+        addFunction(buildOnAttachedToWindowFunction())
+        addFunction(buildOnDetachedFromWindowFunction())
+        addInitializerBlock(
+            CodeBlock.of(
+                """
+binding.lifecycleOwner = %M
+binding.viewModel = viewModel
+scheme.initializer?.invoke(this, viewModel)
+""",
+                MemberName("ru.impression.c_logic_base", "activity")
+            )
+        )
         addType(buildCompanionObject())
-        build()
     }
 
     private fun buildConstructor(): FunSpec = with(FunSpec.constructorBuilder()) {
@@ -49,52 +73,59 @@ class ViewComponentClassBuilder(
         build()
     }
 
-    private fun buildSchemeProperty() =
-        with(PropertySpec.builder("scheme", scheme.asClassName())) {
-            initializer("%T()", scheme.asClassName())
-            build()
-        }
 
     private fun buildBindingProperty() =
         with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
             initializer(
-                "%T.%N(%T.%N(%N), %L, %L)", bindingClass,
-                "inflate",
-                ClassName("android.view", "LayoutInflater"),
-                "from",
-                "context",
-                "this",
-                "true"
+                "%T.inflate(%T.from(context), this, true)",
+                bindingClass,
+                ClassName("android.view", "LayoutInflater")
             )
             build()
         }
 
-    private fun buildViewModelProperty() =
-        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
-            initializer(
-                "%T.%N(%L, %L)",
-                ClassName("ru.impression.c_logic_base", "ComponentViewModel"),
-                "create",
-                "$viewModelClass::class",
-                "this"
+    private fun buildTwoWayBindingObservablesProperty() = with(
+        PropertySpec.builder(
+            "twoWayBindingObservables",
+            ClassName("kotlin.collections", "HashMap").parameterizedBy(
+                ClassName("kotlin", "String"),
+                ClassName("ru.impression.c_logic_base.ComponentViewModel", "Data")
+                    .parameterizedBy(STAR)
             )
-            build()
+        )
+    ) {
+        initializer("HashMap<String, Data<*>>()")
+        build()
+    }
+
+    private fun buildOnAttachedToWindowFunction() = with(FunSpec.builder("onAttachedToWindow")) {
+        addModifiers(KModifier.OVERRIDE)
+        addCode(
+            """super.onAttachedToWindow()
+dataRelationManager.establishRelations()
+"""
+        )
+        val viewModelEnclosedElements =
+            (viewModelClass as DeclaredType).asElement().enclosedElements
+        for (viewModelElement in viewModelEnclosedElements) {
+            if (viewModelElement.getAnnotation(Bindable::class.java)?.twoWay != true) continue
+            val propertyName = viewModelElement.toString().substringBefore('$')
+            addCode(
+                """observingHelper.observe(viewModel.$propertyName) { twoWayBindingObservables[%S]?.value = it }
+""",
+                propertyName
+            )
         }
+        build()
+    }
 
-
-    private fun buildBindingManagerProperty() =
-        with(
-            PropertySpec.builder(
-                "bindingManager",
-                ClassName("ru.impression.c_logic_base", "BindingManager")
-            )
-        ) {
-            initializer(
-                "%T(%L, %N, %N)",
-                ClassName("ru.impression.c_logic_base", "BindingManager"),
-                "this",
-                "binding",
-                "viewModel"
+    private fun buildOnDetachedFromWindowFunction() =
+        with(FunSpec.builder("onDetachedFromWindow")) {
+            addModifiers(KModifier.OVERRIDE)
+            addCode(
+                """super.onDetachedFromWindow()
+observingHelper.stopAllObservations()
+"""
             )
             build()
         }
@@ -103,43 +134,56 @@ class ViewComponentClassBuilder(
         val viewModelEnclosedElements =
             (viewModelClass as DeclaredType).asElement().enclosedElements
         viewModelEnclosedElements.forEach { viewModelElement ->
-            val bindableAnnotation = viewModelElement.getAnnotation(Bindable::class.java)
-            if (bindableAnnotation != null) {
-                val propertyName = viewModelElement.toString().substringBefore('$')
-                val capitalizedPropertyName = propertyName.substring(0, 1)
-                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                val propertyGetter =
-                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
-                val propertyType =
-                    ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
+            viewModelElement.getAnnotation(Bindable::class.java)?.let {
                 addFunction(
-                    FunSpec.builder("set$capitalizedPropertyName")
-                        .addAnnotation(JvmStatic::class.java)
-                        .addAnnotation(
-                            AnnotationSpec.builder(
-                                ClassName("androidx.databinding", "BindingAdapter")
-                            ).addMember("%S", propertyName).build()
-                        ).addParameter("view", ClassName(resultClassPackage, resultClassName))
-                        .addParameter(
-                            "value",
-                            if (bindableAnnotation.twoWay)
-                                ClassName(
-                                    "ru.impression.c_logic_base.ComponentViewModel",
-                                    "Data"
-                                ).parameterizedBy(propertyType.asTypeName())
-                            else
-                                propertyType.asTypeName()
-                        )
-                        .addCode(
-                            """
-        |view.bindingManager.removeTwoWayBindableData(%N)
-        |view.viewModel.%N.set(value)
-        |view.bindingManager.addTwoWayBindableData(%N, value)""", propertyName, propertyName
-                        )
-                        .build()
+                    buildBindingFunction(viewModelElement, viewModelEnclosedElements, it.twoWay)
                 )
             }
         }
         build()
+    }
+
+    private fun buildBindingFunction(
+        viewModelElement: Element,
+        viewModelEnclosedElements: List<Element>,
+        twoWay: Boolean
+    ): FunSpec {
+        val propertyName = viewModelElement.toString().substringBefore('$')
+        val capitalizedPropertyName = propertyName.substring(0, 1)
+            .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
+        val propertyGetter =
+            viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
+        val propertyType =
+            ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
+        return with(FunSpec.builder("set$capitalizedPropertyName")) {
+            addAnnotation(JvmStatic::class.java)
+            addAnnotation(
+                AnnotationSpec.builder(
+                    ClassName("androidx.databinding", "BindingAdapter")
+                ).addMember("%S", propertyName).build()
+            )
+            addParameter("view", ClassName(resultClassPackage, resultClassName))
+            addParameter(
+                "value",
+                if (twoWay)
+                    ClassName(
+                        "ru.impression.c_logic_base.ComponentViewModel",
+                        "Data"
+                    ).parameterizedBy(propertyType.asTypeName().javaToKotlinType())
+                else
+                    propertyType.asTypeName()
+            )
+            if (twoWay)
+                addCode(
+                    """view.twoWayBindingObservables.remove(%S)
+view.viewModel.$propertyName.set(value.get())
+view.twoWayBindingObservables[%S] = value""",
+                    propertyName,
+                    propertyName
+                )
+            else
+                addCode("view.viewModel.$propertyName.set(value.get())")
+            build()
+        }
     }
 }

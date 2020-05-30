@@ -14,6 +14,8 @@ class MyButtonViewModel : ComponentViewModel() {
 
     @Bindable(true)
     val text = Data<String>()
+        .mutableBy(MyLayoutViewModel::text)
+        .changesAffect(MyLayoutViewModel::text)
 
     fun onMyButtonClick() {
         text.set("HELLO WORLD!")
