@@ -1,13 +1,13 @@
 package ru.impression.c_logic_base
 
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import kotlin.reflect.KProperty1
 
 class DataRelationManager(
-    private val activity: AppCompatActivity,
+    private val activity: FragmentActivity,
     private val viewModel: ComponentViewModel,
     private val observingHelper: ObservingHelper
 ) {

@@ -26,6 +26,25 @@ class ViewComponentClassBuilder(
     viewModelClass
 ) {
 
+    override fun buildBindingProperty() =
+        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
+            initializer(
+                "%T.inflate(%T.from(context), this, true)",
+                bindingClass,
+                ClassName("android.view", "LayoutInflater")
+            )
+            build()
+        }
+
+    override fun buildViewModelProperty() =
+        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+            initializer(
+                "%M<$viewModelClass>()",
+                MemberName("ru.impression.c_logic_base", "obtainViewModel")
+            )
+            build()
+        }
+
     override fun buildObservingHelperProperty() = with(
         PropertySpec.builder(
             "observingHelper",
@@ -41,14 +60,12 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("context")
         addSuperclassConstructorParameter("attrs")
         addSuperclassConstructorParameter("defStyleAttr")
-        addProperty(buildBindingProperty())
         addProperty(buildTwoWayBindingObservablesProperty())
         addFunction(buildOnAttachedToWindowFunction())
         addFunction(buildOnDetachedFromWindowFunction())
         addInitializerBlock(
             CodeBlock.of(
-                """
-binding.lifecycleOwner = %M
+                """binding.lifecycleOwner = %M
 binding.viewModel = viewModel
 scheme.initializer?.invoke(this, viewModel)
 """,
@@ -72,17 +89,6 @@ scheme.initializer?.invoke(this, viewModel)
         addAnnotation(JvmOverloads::class)
         build()
     }
-
-
-    private fun buildBindingProperty() =
-        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
-            initializer(
-                "%T.inflate(%T.from(context), this, true)",
-                bindingClass,
-                ClassName("android.view", "LayoutInflater")
-            )
-            build()
-        }
 
     private fun buildTwoWayBindingObservablesProperty() = with(
         PropertySpec.builder(

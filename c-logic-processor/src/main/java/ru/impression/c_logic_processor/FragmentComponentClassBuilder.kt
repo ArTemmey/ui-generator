@@ -20,6 +20,22 @@ class FragmentComponentClassBuilder(
     viewModelClass
 ) {
 
+    override fun buildBindingProperty() =
+        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
+            mutable(true)
+            addModifiers(KModifier.LATEINIT)
+            build()
+        }
+
+    override fun buildViewModelProperty() =
+        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+            delegate(
+                "lazy { %M<$viewModelClass>() } ",
+                MemberName("ru.impression.c_logic_base", "obtainViewModel")
+            )
+            build()
+        }
+
     override fun buildObservingHelperProperty() = with(
         PropertySpec.builder(
             "observingHelper",
@@ -31,10 +47,33 @@ class FragmentComponentClassBuilder(
     }
 
     override fun TypeSpec.Builder.buildRestMembers() {
-        buildOnCreateViewFunction()
+        addFunction(buildOnCreateFunction())
+        addFunction(buildOnCreateViewFunction())
     }
 
-    private fun buildOnCreateViewFunction()  = with(FunSpec.builder("onCreateView")){
-        addParameter("")
+    private fun buildOnCreateFunction() = with(FunSpec.builder("onCreate")) {
+        addModifiers(KModifier.OVERRIDE)
+        addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
+        addCode(
+            """dataRelationManager.establishRelations()
+scheme.initializer?.invoke(this, viewModel)"""
+        )
+        build()
+    }
+
+    private fun buildOnCreateViewFunction() = with(FunSpec.builder("onCreateView")) {
+        addModifiers(KModifier.OVERRIDE)
+        addParameter("inflater", ClassName("android.view", "LayoutInflater"))
+        addParameter("container", ClassName("android.view", "ViewGroup").copy(true))
+        addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
+        returns(ClassName("android.view", "View").copy(true))
+        addCode(
+            """binding = %T.inflate(inflater, container, false)
+binding.lifecycleOwner = this
+binding.viewModel = viewModel
+return binding.root""",
+            bindingClass
+        )
+        build()
     }
 }

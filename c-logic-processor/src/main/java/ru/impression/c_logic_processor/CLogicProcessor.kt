@@ -48,8 +48,14 @@ class CLogicProcessor : AbstractProcessor() {
                         break@classIteration
                     }
                     "androidx.fragment.app.Fragment" -> {
-                        resultClass =
-                            buildFragmentComponentClass(resultClassName, superclass.asTypeName())
+                        resultClass = FragmentComponentClassBuilder(
+                            element,
+                            resultClassName,
+                            resultClassPackage,
+                            superclass.asTypeName(),
+                            bindingClass,
+                            viewModelClass
+                        ).build()
                         break@classIteration
                     }
                     else -> downwardClass =
@@ -72,13 +78,5 @@ class CLogicProcessor : AbstractProcessor() {
             file.writeTo(File(processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]!!))
         }
         return false
-    }
-
-    private fun buildFragmentComponentClass(
-        resultClassName: String,
-        superclass: TypeName
-    ): TypeSpec = with(TypeSpec.classBuilder(resultClassName)) {
-        superclass(superclass)
-        build()
     }
 }

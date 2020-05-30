@@ -16,6 +16,7 @@ abstract class ComponentClassBuilder(
     fun build() = with(TypeSpec.classBuilder(resultClassName)) {
         superclass(superclass)
         addProperty(buildSchemeProperty())
+        addProperty(buildBindingProperty())
         addProperty(buildViewModelProperty())
         addProperty(buildObservingHelperProperty())
         addProperty(buildDataRelationManagerProperty())
@@ -29,14 +30,9 @@ abstract class ComponentClassBuilder(
             build()
         }
 
-    protected fun buildViewModelProperty() =
-        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
-            initializer(
-                "%M<$viewModelClass>()",
-                MemberName("ru.impression.c_logic_base", "obtainViewModel")
-            )
-            build()
-        }
+    protected abstract fun buildBindingProperty(): PropertySpec
+
+    protected abstract fun buildViewModelProperty(): PropertySpec
 
     protected abstract fun buildObservingHelperProperty(): PropertySpec
 

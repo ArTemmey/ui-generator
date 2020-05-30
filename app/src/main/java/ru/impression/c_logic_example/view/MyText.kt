@@ -11,7 +11,5 @@ class MyText : ComponentScheme<FrameLayout, MyTextBinding, MyTextViewModel>()
 
 class MyTextViewModel : ComponentViewModel() {
 
-    val text = dataDuplicate(MyLayoutViewModel::text)
 
-    val data = mutableDuplicate(MyLayoutViewModel::text)
 }
