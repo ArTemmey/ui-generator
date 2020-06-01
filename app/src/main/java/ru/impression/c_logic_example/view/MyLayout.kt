@@ -8,10 +8,21 @@ import ru.impression.c_logic_base.ComponentViewModel
 import ru.impression.c_logic_example.databinding.MyLayoutBinding
 
 @MakeComponent
-class MyLayout : ComponentScheme<FrameLayout, MyLayoutBinding, MyLayoutViewModel>()
+class MyLayout : ComponentScheme<FrameLayout, MyLayoutViewModel>({
+    if (it.isVisible)
+        MyLayoutBinding::class
+    else
+        null
+})
 
 @SharedViewModel
 class MyLayoutViewModel : ComponentViewModel() {
 
-    var text = ""
+    var isVisible by state(true)
+
+    var text by state<String?>(null)
+
+    init {
+        text = "123"
+    }
 }

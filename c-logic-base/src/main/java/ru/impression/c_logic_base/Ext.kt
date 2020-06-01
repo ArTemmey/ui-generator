@@ -43,7 +43,11 @@ fun KClass<out ViewDataBinding>.inflate(
     true
 ) as ViewDataBinding).apply {
     this.lifecycleOwner = lifecycleOwner
-    var packageName = javaClass.`package`!!.name
+    setViewModel(viewModel)
+}
+
+fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
+    var packageName = viewModel::class.java.`package`!!.name
     var br: Class<*>? = null
     while (true) {
         try {
@@ -58,15 +62,15 @@ fun KClass<out ViewDataBinding>.inflate(
     setVariable(br!!.getField("viewModel").getInt(null), viewModel)
 }
 
-inline fun <reified T : ViewModel> Any.obtainViewModel(vararg arguments: Any?): T {
+fun <T : ComponentViewModel> Any.createViewModel(viewModelClass: KClass<T>): T {
     val activity =
         (this as? View)?.activity ?: (this as? Fragment)?.activity
-        ?: return T::class.createInstance()
+        ?: return viewModelClass.createInstance()
     return when {
-        T::class.findAnnotation<SharedViewModel>() != null ->
-            ViewModelProvider(activity)[T::class.java]
-        this is ViewModelStoreOwner -> ViewModelProvider(this)[T::class.java]
-        else -> T::class.createInstance()
+        viewModelClass.findAnnotation<SharedViewModel>() != null ->
+            ViewModelProvider(activity)[viewModelClass.java]
+        this is ViewModelStoreOwner -> ViewModelProvider(this)[viewModelClass.java]
+        else -> viewModelClass.createInstance()
     }
 }
 

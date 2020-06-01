@@ -2,31 +2,40 @@ package ru.impression.c_logic_base
 
 import androidx.lifecycle.*
 import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
 
 abstract class ComponentViewModel : ViewModel() {
 
     @PublishedApi
-    internal val changedProperty = SingleTakenLiveData<Pair<String, *>>()
+    internal val propertyChange = SingleTakenLiveData<Unit>()
 
     @PublishedApi
-    internal val dataDuplicates = ArrayList<DataDependency>()
+    internal val propertyShares =
+        HashMap<KClass<out ComponentViewModel>, ArrayList<PropertyShare>>()
 
-    inline fun <reified VM : ViewModel, T> ReadWriteProperty<ComponentViewModel, T>.mutableBy(
-        vararg properties: KProperty1<VM, T>
-    ) = apply {
-        properties.forEach {
-            dataDuplicates.add(DataDependency(VM::class, it, this))
-        }
-    }
-
-    fun <T> data(
+    fun <T> state(
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> = object : DataImpl<T>(initialValue, onChanged) {
-        override fun notifyComponent(propertyName: String, propertyValue: T) {
-            changedProperty.value = propertyName to propertyValue
+        override fun notifyComponent() {
+            propertyChange.value = Unit
+        }
+    }
+
+    inline fun <reified VM : ComponentViewModel, T> ReadWriteProperty<ComponentViewModel, T>.mutableBy(
+        vararg properties: KProperty1<VM, T>
+    ) = apply {
+        properties.forEach { property ->
+            val list = propertyShares[VM::class]
+                ?: ArrayList<PropertyShare>().also { propertyShares[VM::class] = it }
+            list.add(
+                PropertyShare(
+                    property as KProperty1<ComponentViewModel, *>,
+                    this as DataImpl<T>
+                )
+            )
         }
     }
 
@@ -43,12 +52,16 @@ abstract class ComponentViewModel : ViewModel() {
         override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
+            setValue(value)
+        }
+
+        fun setValue(value: T) {
             if (this.value == value) return
             this.value = value
             onChanged?.invoke(value)
-            notifyComponent(property.name, value)
+            notifyComponent()
         }
 
-        abstract fun notifyComponent(propertyName: String, propertyValue: T)
+        abstract fun notifyComponent()
     }
 }
