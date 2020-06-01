@@ -13,15 +13,15 @@ class DataRelationManager(
 ) {
 
     fun establishRelations() {
-        viewModel.dataRelations.forEach { dataRelation ->
+        viewModel.dataDuplicates.forEach { dataRelation ->
             when (dataRelation.type) {
-                DataRelation.Type.MUTABILITY -> observingHelper.observe(
+                DataDependency.Type.MUTABILITY -> observingHelper.observe(
                     (dataRelation.sourceProperty as KProperty1<Any, LiveData<*>>).get(
                         ViewModelProvider(activity)[dataRelation.sourceViewModelClass.java]
                     )
                 ) { (dataRelation.target as ComponentViewModel.Data<Any>).set(it) }
 
-                DataRelation.Type.AFFECTION -> observingHelper.observe(dataRelation.target) {
+                DataDependency.Type.AFFECTION -> observingHelper.observe(dataRelation.target) {
                     (dataRelation.sourceProperty as KProperty1<Any, MutableLiveData<*>>).get(
                         ViewModelProvider(activity)[dataRelation.sourceViewModelClass.java]
                     ).value = it

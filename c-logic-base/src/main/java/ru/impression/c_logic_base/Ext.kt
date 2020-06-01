@@ -1,10 +1,14 @@
 package ru.impression.c_logic_base
 
+import android.content.Context
 import android.content.ContextWrapper
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -23,7 +27,38 @@ val View.activity: AppCompatActivity?
         return contextWrapper
     }
 
-inline fun <reified T : ViewModel> Any.obtainViewModel(): T {
+fun KClass<out ViewDataBinding>.inflate(
+    container: ViewGroup,
+    viewModel: ComponentViewModel,
+    lifecycleOwner: LifecycleOwner
+) = (java.getMethod(
+    "inflate",
+    LayoutInflater::class.java,
+    ViewGroup::class.java,
+    Boolean::class.javaPrimitiveType
+).invoke(
+    null,
+    LayoutInflater.from(container.context),
+    container,
+    true
+) as ViewDataBinding).apply {
+    this.lifecycleOwner = lifecycleOwner
+    var packageName = javaClass.`package`!!.name
+    var br: Class<*>? = null
+    while (true) {
+        try {
+            br = Class.forName("$packageName.BR")
+            break
+        } catch (e: ClassNotFoundException) {
+            val nextPackageName = packageName.substringBeforeLast('.')
+            if (nextPackageName == packageName) break
+            packageName = nextPackageName
+        }
+    }
+    setVariable(br!!.getField("viewModel").getInt(null), viewModel)
+}
+
+inline fun <reified T : ViewModel> Any.obtainViewModel(vararg arguments: Any?): T {
     val activity =
         (this as? View)?.activity ?: (this as? Fragment)?.activity
         ?: return T::class.createInstance()
@@ -34,3 +69,8 @@ inline fun <reified T : ViewModel> Any.obtainViewModel(): T {
         else -> T::class.createInstance()
     }
 }
+
+//private class ViewModelFactory(vararg arguments: Any?) : ViewModelProvider.Factory {
+//    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+//    }
+//}
