@@ -3,18 +3,18 @@ package ru.impression.c_logic_base
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.children
-import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import ru.impression.c_logic_annotations.SharedViewModel
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
 interface Component<C, VM : ComponentViewModel> {
 
     val scheme: ComponentScheme<C, VM>
+
+    val viewModelClass: KClass<VM>
 
     val viewModel: VM
 
@@ -29,45 +29,43 @@ interface Component<C, VM : ComponentViewModel> {
     }
 
     fun startObservations() {
-        viewModel.propertyChange.observe(lifecycleOwner, Observer { render() })
-        val viewPropertyShares =
-            HashMap<KClass<out ComponentViewModel>, List<PropertyShare>>()
-        viewModel.propertyShares.forEach {
-            if (it.key.findAnnotation<SharedViewModel>() != null)
-                performPropertyShares(createViewModel(it.key), it.value)
-            else
-                viewPropertyShares[it.key] = it.value
+        viewModel.stateChange.observe(lifecycleOwner, Observer { render() })
+        bindSharedProperties()
+    }
 
-        }
-        container.bindSharedProperties(viewPropertyShares)
+    private fun bindSharedProperties() {
+        val sharedPropertiesOfChildViews =
+            viewModel.sharedProperties.filterTo(HashMap()) { sharedPropertiesOfCertainViewModel ->
+                if (sharedPropertiesOfCertainViewModel.key.findAnnotation<SharedViewModel>() == null)
+                    return@filterTo true
+                val sourceViewModel = createViewModel(sharedPropertiesOfCertainViewModel.key)
+                sourceViewModel.stateChange.observe(
+                    lifecycleOwner,
+                    Observer {
+                        sharedPropertiesOfCertainViewModel.value.forEach { sharedProperty ->
+                            (sharedProperty.value as ComponentViewModel.StateImpl<Any?>)
+                                .setValue(null, sharedProperty.key.get(sourceViewModel))
+                        }
+                    }
+                )
+                false
+            }
+        if (sharedPropertiesOfChildViews.isNotEmpty())
+            container.bindSharedProperties(sharedPropertiesOfChildViews)
     }
 
     private fun View.bindSharedProperties(
-        propertyShares: MutableMap<KClass<out ComponentViewModel>, List<PropertyShare>>
+        sharedProperties: HashMap<KClass<out ComponentViewModel>, HashMap<KProperty1<ComponentViewModel, *>, ComponentViewModel.StateImpl<*>>>
     ) {
         if (this is Component<*, *>) {
-            propertyShares.remove(viewModel::class)?.let { performPropertyShares(viewModel, it) }
-            if (propertyShares.isEmpty()) return
-        }
-        if (this is ViewGroup) children.forEach { it.bindSharedProperties(propertyShares) }
-    }
-
-    private fun performPropertyShares(
-        sourceViewModel: ComponentViewModel,
-        propertyShares: List<PropertyShare>
-    ) {
-        sourceViewModel.propertyChange.observe(
-            this@Component.lifecycleOwner,
-            Observer {
-                propertyShares.forEach { propertyShare ->
-                    val value = (sourceViewModel::class.declaredMemberProperties
-                        .find { it == propertyShare.sourceProperty }
-                            as? KProperty1<ComponentViewModel, *>)
-                        ?.get(sourceViewModel)
-                    (propertyShare.targetProperty as? ComponentViewModel.DataImpl<Any?>)
-                        ?.setValue(value)
+            sharedProperties.remove(viewModel::class)?.let { sharedPropertiesOfCertainViewModel ->
+                viewModel.addOnPropertyChangeListener(this@Component) { property, value ->
+                    (sharedPropertiesOfCertainViewModel[property]
+                            as ComponentViewModel.StateImpl<Any?>?)?.setValue(null, value)
                 }
             }
-        )
+            if (sharedProperties.isEmpty()) return
+        }
+        if (this is ViewGroup) children.forEach { it.bindSharedProperties(sharedProperties) }
     }
 }

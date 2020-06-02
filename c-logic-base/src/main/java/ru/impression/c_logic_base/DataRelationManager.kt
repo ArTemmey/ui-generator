@@ -13,7 +13,7 @@ class DataRelationManager(
 ) {
 
     fun establishRelations() {
-        viewModel.propertyShares.forEach { dataRelation ->
+        viewModel.sharedProperties.forEach { dataRelation ->
             when (dataRelation.type) {
                 PropertyShare.Type.MUTABILITY -> observingHelper.observe(
                     (dataRelation.sourceProperty as KProperty1<Any, LiveData<*>>).get(

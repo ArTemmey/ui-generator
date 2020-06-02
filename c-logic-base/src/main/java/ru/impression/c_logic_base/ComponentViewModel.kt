@@ -1,5 +1,6 @@
 package ru.impression.c_logic_base
 
+import android.os.Looper
 import androidx.lifecycle.*
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -9,40 +10,53 @@ import kotlin.reflect.KProperty1
 abstract class ComponentViewModel : ViewModel() {
 
     @PublishedApi
-    internal val propertyChange = SingleTakenLiveData<Unit>()
+    internal val stateChange = SingleTakenLiveData<Unit>()
 
     @PublishedApi
-    internal val propertyShares =
-        HashMap<KClass<out ComponentViewModel>, ArrayList<PropertyShare>>()
+    internal val sharedProperties =
+        HashMap<KClass<out ComponentViewModel>, HashMap<KProperty1<ComponentViewModel, *>, StateImpl<*>>>()
 
-    fun <T> state(
-        initialValue: T,
-        onChanged: ((T) -> Unit)? = null
-    ): ReadWriteProperty<ComponentViewModel, T> = object : DataImpl<T>(initialValue, onChanged) {
-        override fun notifyComponent() {
-            propertyChange.value = Unit
+    private val propertyChangeListeners =
+        HashMap<Component<*, *>, (property: KProperty1<ComponentViewModel, *>, value: Any?) -> Unit>()
+
+    fun <T> state(initialValue: T, onChanged: ((T) -> Unit)? = null) =
+        object : StateImpl<T>(initialValue, onChanged) {
+            override fun notifyStateChanged(
+                property: KProperty1<ComponentViewModel, *>?,
+                value: T
+            ) {
+                if (Thread.currentThread() == Looper.getMainLooper().thread)
+                    stateChange.value = Unit
+                else
+                    stateChange.postValue(Unit)
+                property?.let { propertyChangeListeners.values.forEach { it(property, value) } }
+            }
         }
-    }
 
-    inline fun <reified VM : ComponentViewModel, T> ReadWriteProperty<ComponentViewModel, T>.mutableBy(
+    inline fun <reified VM : ComponentViewModel, T> StateImpl<T>.mutableBy(
         vararg properties: KProperty1<VM, T>
     ) = apply {
         properties.forEach { property ->
-            val list = propertyShares[VM::class]
-                ?: ArrayList<PropertyShare>().also { propertyShares[VM::class] = it }
-            list.add(
-                PropertyShare(
-                    property as KProperty1<ComponentViewModel, *>,
-                    this as DataImpl<T>
-                )
-            )
+            val map = sharedProperties[VM::class]
+                ?: HashMap<KProperty1<ComponentViewModel, *>, StateImpl<*>>().also {
+                    sharedProperties[VM::class] = it
+                }
+            map[property as KProperty1<ComponentViewModel, *>] = this
         }
     }
 
-    companion object
+    internal fun addOnPropertyChangeListener(
+        owner: Component<*, *>,
+        listener: (property: KProperty1<ComponentViewModel, *>, value: Any?) -> Unit
+    ) {
+        propertyChangeListeners[owner] = listener
+    }
 
-    @PublishedApi
-    internal abstract class DataImpl<T>(
+    internal fun removeOnPropertyChangeListener(owner: Component<*, *>) {
+        propertyChangeListeners.remove(owner)
+    }
+
+    abstract class StateImpl<T> internal constructor(
         initialValue: T,
         private val onChanged: ((T) -> Unit)? = null
     ) : ReadWriteProperty<ComponentViewModel, T> {
@@ -52,16 +66,18 @@ abstract class ComponentViewModel : ViewModel() {
         override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
-            setValue(value)
+            setValue(property as KProperty1<ComponentViewModel, *>, value)
         }
 
-        fun setValue(value: T) {
+        fun setValue(property: KProperty1<ComponentViewModel, *>?, value: T) {
             if (this.value == value) return
             this.value = value
             onChanged?.invoke(value)
-            notifyComponent()
+            notifyStateChanged(property, value)
         }
 
-        abstract fun notifyComponent()
+        abstract fun notifyStateChanged(property: KProperty1<ComponentViewModel, *>?, value: T)
     }
+
+    companion object
 }

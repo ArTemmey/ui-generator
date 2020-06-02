@@ -41,26 +41,15 @@ fun KClass<out ViewDataBinding>.inflate(
     LayoutInflater.from(container.context),
     container,
     true
-) as ViewDataBinding).apply {
-    this.lifecycleOwner = lifecycleOwner
-    setViewModel(viewModel)
-}
+) as ViewDataBinding).apply { this.lifecycleOwner = lifecycleOwner }
 
 fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
-    var packageName = viewModel::class.java.`package`!!.name
-    var br: Class<*>? = null
-    while (true) {
-        try {
-            br = Class.forName("$packageName.BR")
-            break
-        } catch (e: ClassNotFoundException) {
-            val nextPackageName = packageName.substringBeforeLast('.')
-            if (nextPackageName == packageName) break
-            packageName = nextPackageName
-        }
-    }
-    setVariable(br!!.getField("viewModel").getInt(null), viewModel)
+    this::class.java.getMethod("setViewModel", ComponentViewModel::class.java)
+        .invoke(this, viewModel)
 }
+
+fun ViewDataBinding.getViewModel(): ComponentViewModel? =
+    this::class.java.getMethod("getViewModel").invoke(this) as ComponentViewModel?
 
 fun <T : ComponentViewModel> Any.createViewModel(viewModelClass: KClass<T>): T {
     val activity =

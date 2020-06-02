@@ -20,8 +20,9 @@ class MyLayoutViewModel : ComponentViewModel() {
 
     var isVisible by state(true)
 
-    var text by state<String?>(null)
+    var text by state<String?>(null).mutableBy(MyButtonViewModel::text)
 
+    var t = ""
     init {
         text = "123"
     }

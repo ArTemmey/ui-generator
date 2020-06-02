@@ -14,15 +14,19 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-       <ru.impression.c_logic_example.view.MyTextComponent
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"/>
+        <ru.impression.c_logic_example.view.MyTextComponent
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <ru.impression.c_logic_example.view.MyButtonComponent
             text="@{viewModel.text}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@={viewModel.t}" />
     </LinearLayout>
 
 </layout>
