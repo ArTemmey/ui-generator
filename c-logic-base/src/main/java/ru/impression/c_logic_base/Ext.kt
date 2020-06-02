@@ -43,7 +43,7 @@ fun KClass<out ViewDataBinding>.inflate(
     true
 ) as ViewDataBinding).apply { this.lifecycleOwner = lifecycleOwner }
 
-fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
+fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
     this::class.java.getMethod("setViewModel", ComponentViewModel::class.java)
         .invoke(this, viewModel)
 }

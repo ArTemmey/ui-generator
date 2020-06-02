@@ -20,5 +20,5 @@ class MyButtonViewModel : ComponentViewModel() {
 
     var text by state<String?>(null){
 
-    }.mutableBy(MyLayoutViewModel::text)
+    }.mutableBy(MyLayoutViewModel::image)
 }

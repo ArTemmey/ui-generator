@@ -9,6 +9,8 @@ import kotlin.reflect.KProperty1
 
 abstract class ComponentViewModel : ViewModel() {
 
+    val observables = HashMap<String, MutableLiveData<*>>()
+
     @PublishedApi
     internal val stateChange = SingleTakenLiveData<Unit>()
 
@@ -16,20 +18,13 @@ abstract class ComponentViewModel : ViewModel() {
     internal val sharedProperties =
         HashMap<KClass<out ComponentViewModel>, HashMap<KProperty1<ComponentViewModel, *>, StateImpl<*>>>()
 
-    private val propertyChangeListeners =
-        HashMap<Component<*, *>, (property: KProperty1<ComponentViewModel, *>, value: Any?) -> Unit>()
-
     fun <T> state(initialValue: T, onChanged: ((T) -> Unit)? = null) =
         object : StateImpl<T>(initialValue, onChanged) {
-            override fun notifyStateChanged(
-                property: KProperty1<ComponentViewModel, *>?,
-                value: T
-            ) {
+            override fun notifyStateChanged() {
                 if (Thread.currentThread() == Looper.getMainLooper().thread)
                     stateChange.value = Unit
                 else
                     stateChange.postValue(Unit)
-                property?.let { propertyChangeListeners.values.forEach { it(property, value) } }
             }
         }
 
@@ -45,17 +40,6 @@ abstract class ComponentViewModel : ViewModel() {
         }
     }
 
-    internal fun addOnPropertyChangeListener(
-        owner: Component<*, *>,
-        listener: (property: KProperty1<ComponentViewModel, *>, value: Any?) -> Unit
-    ) {
-        propertyChangeListeners[owner] = listener
-    }
-
-    internal fun removeOnPropertyChangeListener(owner: Component<*, *>) {
-        propertyChangeListeners.remove(owner)
-    }
-
     abstract class StateImpl<T> internal constructor(
         initialValue: T,
         private val onChanged: ((T) -> Unit)? = null
@@ -66,17 +50,17 @@ abstract class ComponentViewModel : ViewModel() {
         override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
-            setValue(property as KProperty1<ComponentViewModel, *>, value)
+            setValue(value)
         }
 
-        fun setValue(property: KProperty1<ComponentViewModel, *>?, value: T) {
+        fun setValue(value: T) {
             if (this.value == value) return
             this.value = value
             onChanged?.invoke(value)
-            notifyStateChanged(property, value)
+            notifyStateChanged()
         }
 
-        abstract fun notifyStateChanged(property: KProperty1<ComponentViewModel, *>?, value: T)
+        abstract fun notifyStateChanged()
     }
 
     companion object
