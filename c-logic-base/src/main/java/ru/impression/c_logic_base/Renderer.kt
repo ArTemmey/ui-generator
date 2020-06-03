@@ -9,31 +9,26 @@ class Renderer(private val component: Component<*, *>) {
 
     var binding: ViewDataBinding? = null
 
-    fun render(bindingClass: KClass<out ViewDataBinding>?) {
-        if (bindingClass != null)
+    fun render(newBindingClass: KClass<out ViewDataBinding>?) {
+        if (newBindingClass != null)
             binding?.let {
-                if (it::class == bindingClass) {
+                if (it::class == newBindingClass) {
                     it.setViewModel(component.viewModel)
                     it.executePendingBindings()
                     return
                 }
             }
-        replaceBinding(
-            bindingClass?.inflate(
-                component.container as? ViewGroup
-                    ?: throw UnsupportedOperationException("Component must be ViewGroup"),
-                component.viewModel,
-                component.lifecycleOwner
-            )?.apply { executePendingBindings() }
+        val newBinding = newBindingClass?.inflate(
+            component.container as? ViewGroup
+                ?: throw UnsupportedOperationException("Component must be ViewGroup"),
+            component.viewModel,
+            component.lifecycleOwner
         )
-    }
-
-    private fun replaceBinding(newBinding: ViewDataBinding?) {
         binding?.let { oldBinding ->
             oldBinding.unbind()
             (component.container as? ViewGroup)?.removeAllViews()
         }
         binding = newBinding
-        newBinding ?: run { component.container.visibility = GONE }
+        newBinding?.executePendingBindings() ?: run { component.container.visibility = GONE }
     }
 }

@@ -20,13 +20,6 @@ class FragmentComponentClassBuilder(
     viewModelClass
 ) {
 
-    override fun buildBindingProperty() =
-        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
-            mutable(true)
-            addModifiers(KModifier.LATEINIT)
-            build()
-        }
-
     override fun buildViewModelProperty() =
         with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
             delegate(
@@ -36,16 +29,24 @@ class FragmentComponentClassBuilder(
             build()
         }
 
-    override fun buildObservingHelperProperty() = with(
+    override fun buildContainerProperty() =
+        with(PropertySpec.builder("container", ClassName("android.view", "View"))) {
+            addModifiers(KModifier.OVERRIDE)
+            initializer("this")
+            build()
+        }
+
+    override fun buildLifecycleOwnerProperty() = with(
         PropertySpec.builder(
-            "observingHelper",
-            ClassName("ru.impression.c_logic_base", "FragmentObservingHelper")
+            "lifecycleOwner",
+            ClassName("androidx.lifecycle", "LifecycleOwner")
         )
     ) {
-        initializer("FragmentObservingHelper(this)")
+        addModifiers(KModifier.OVERRIDE)
+        initializer("this")
         build()
     }
-
+    
     override fun TypeSpec.Builder.buildRestMembers() {
         addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())

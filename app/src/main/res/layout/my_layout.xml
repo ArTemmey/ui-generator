@@ -19,7 +19,7 @@
             android:layout_height="wrap_content" />
 
         <ru.impression.c_logic_example.view.MyButtonComponent
-            text="@{viewModel.observables[viewModel::getImage]}"
+            text="@{viewModel.observables[viewModel::text]}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 

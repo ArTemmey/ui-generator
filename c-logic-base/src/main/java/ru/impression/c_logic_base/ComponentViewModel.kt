@@ -1,46 +1,71 @@
 package ru.impression.c_logic_base
 
 import android.os.Looper
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModel
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty1
 
-abstract class ComponentViewModel : ViewModel() {
-
-    val observables = HashMap<String, MutableLiveData<*>>()
+abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     @PublishedApi
     internal val stateChange = SingleTakenLiveData<Unit>()
 
     @PublishedApi
     internal val sharedProperties =
-        HashMap<KClass<out ComponentViewModel>, HashMap<KProperty1<ComponentViewModel, *>, StateImpl<*>>>()
+        HashMap<KClass<out ComponentViewModel>, HashMap<KMutableProperty1<ComponentViewModel, *>, ArrayList<KMutableProperty1<ComponentViewModel, *>>>>()
 
-    fun <T> state(initialValue: T, onChanged: ((T) -> Unit)? = null) =
-        object : StateImpl<T>(initialValue, onChanged) {
-            override fun notifyStateChanged() {
-                if (Thread.currentThread() == Looper.getMainLooper().thread)
-                    stateChange.value = Unit
-                else
-                    stateChange.postValue(Unit)
+    private val onStatePropertyChangedListeners =
+        HashMap<LifecycleOwner, (property: KMutableProperty1<ComponentViewModel, *>, value: Any?) -> Unit>()
+
+    protected fun <T> state(
+        initialValue: T,
+        onChanged: ((T) -> Unit)? = null
+    ): ReadWriteProperty<ComponentViewModel, T> = object : StateImpl<T>(initialValue, onChanged) {
+        override fun notifyStateChanged(property: KProperty<*>, value: T) {
+            if (Thread.currentThread() == Looper.getMainLooper().thread)
+                stateChange.value = Unit
+            else
+                stateChange.postValue(Unit)
+            onStatePropertyChangedListeners.values.forEach {
+                it(property as KMutableProperty1<ComponentViewModel, *>, value)
             }
-        }
-
-    inline fun <reified VM : ComponentViewModel, T> StateImpl<T>.mutableBy(
-        vararg properties: KProperty1<VM, T>
-    ) = apply {
-        properties.forEach { property ->
-            val map = sharedProperties[VM::class]
-                ?: HashMap<KProperty1<ComponentViewModel, *>, StateImpl<*>>().also {
-                    sharedProperties[VM::class] = it
-                }
-            map[property as KProperty1<ComponentViewModel, *>] = this
         }
     }
 
-    abstract class StateImpl<T> internal constructor(
+    protected inline fun <reified VM : ComponentViewModel, T> KProperty<*>.isMutableBy(
+        vararg properties: KMutableProperty1<VM, T>
+    ) {
+        val map = sharedProperties[VM::class]
+            ?: HashMap<KMutableProperty1<ComponentViewModel, *>, ArrayList<KMutableProperty1<ComponentViewModel, *>>>()
+                .also { sharedProperties[VM::class] = it }
+        properties.forEach { property ->
+            val list = map[property as KMutableProperty1<ComponentViewModel, *>]
+                ?: ArrayList<KMutableProperty1<ComponentViewModel, *>>().also { map[property] = it }
+            list.add(this as KMutableProperty1<ComponentViewModel, *>)
+        }
+    }
+
+    internal fun addOnStatePropertyChangedListener(
+        owner: LifecycleOwner,
+        listener: (property: KProperty<*>, value: Any?) -> Unit
+    ) {
+        onStatePropertyChangedListeners[owner] = listener
+        owner.lifecycle.addObserver(this)
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+            onStatePropertyChangedListeners.remove(source)
+            source.lifecycle.removeObserver(this)
+        }
+    }
+
+    internal abstract class StateImpl<T>(
         initialValue: T,
         private val onChanged: ((T) -> Unit)? = null
     ) : ReadWriteProperty<ComponentViewModel, T> {
@@ -50,18 +75,12 @@ abstract class ComponentViewModel : ViewModel() {
         override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
-            setValue(value)
-        }
-
-        fun setValue(value: T) {
             if (this.value == value) return
             this.value = value
             onChanged?.invoke(value)
-            notifyStateChanged()
+            notifyStateChanged(property, value)
         }
 
-        abstract fun notifyStateChanged()
+        abstract fun notifyStateChanged(property: KProperty<*>, value: T)
     }
-
-    companion object
 }

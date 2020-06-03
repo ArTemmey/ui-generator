@@ -3,6 +3,7 @@ package ru.impression.c_logic_processor
 import com.squareup.kotlinpoet.*
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 abstract class ComponentClassBuilder(
     protected val scheme: TypeElement,
@@ -15,37 +16,39 @@ abstract class ComponentClassBuilder(
 
     fun build() = with(TypeSpec.classBuilder(resultClassName)) {
         superclass(superclass)
+        addSuperinterface(
+            ClassName("ru.impression.c_logic_base", "Component")
+                .parameterizedBy(superclass, viewModelClass.asTypeName())
+        )
         addProperty(buildSchemeProperty())
-        addProperty(buildBindingProperty())
         addProperty(buildViewModelProperty())
-        addProperty(buildObservingHelperProperty())
-        addProperty(buildDataRelationManagerProperty())
+        addProperty(buildContainerProperty())
+        addProperty(buildLifecycleOwnerProperty())
+        addProperty(buildRendererProperty())
         buildRestMembers()
         build()
     }
 
-    protected fun buildSchemeProperty() =
+    private fun buildSchemeProperty() =
         with(PropertySpec.builder("scheme", scheme.asClassName())) {
+            addModifiers(KModifier.OVERRIDE)
             initializer("%T()", scheme.asClassName())
             build()
         }
 
-    protected abstract fun buildBindingProperty(): PropertySpec
-
     protected abstract fun buildViewModelProperty(): PropertySpec
 
-    protected abstract fun buildObservingHelperProperty(): PropertySpec
+    protected abstract fun buildContainerProperty(): PropertySpec
 
-    protected fun buildDataRelationManagerProperty() = with(
+    protected abstract fun buildLifecycleOwnerProperty(): PropertySpec
+
+    private fun buildRendererProperty() = with(
         PropertySpec.builder(
-            "dataRelationManager",
-            ClassName("ru.impression.c_logic_base", "DataRelationManager")
+            "renderer",
+            ClassName("ru.impression.c_logic_base", "Renderer")
         )
     ) {
-        initializer(
-            "DataRelationManager(%M!!, viewModel, observingHelper)",
-            MemberName("ru.impression.c_logic_base", "activity")
-        )
+        initializer("Renderer(this)")
         build()
     }
 

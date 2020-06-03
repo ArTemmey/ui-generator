@@ -3,12 +3,14 @@ package ru.impression.c_logic_processor
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import ru.impression.c_logic_annotations.Bindable
+import ru.impression.c_logic_annotations.SharedViewModel
 import java.util.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
+import kotlin.collections.ArrayList
 
 class ViewComponentClassBuilder(
     scheme: TypeElement,
@@ -26,53 +28,79 @@ class ViewComponentClassBuilder(
     viewModelClass
 ) {
 
-    override fun buildBindingProperty() =
-        with(PropertySpec.builder("binding", bindingClass.asTypeName())) {
-            initializer(
-                "%T.inflate(%T.from(context), this, true)",
-                bindingClass,
-                ClassName("android.view", "LayoutInflater")
-            )
-            build()
+    private val viewModelIsShared =
+        viewModelClass.getAnnotation(SharedViewModel::class.java) != null
+
+    private val bindableProperties = ArrayList<BindableProperty>().apply {
+        val viewModelEnclosedElements =
+            (viewModelClass as DeclaredType).asElement().enclosedElements
+        viewModelEnclosedElements.forEach { viewModelElement ->
+            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
+                val propertyName = viewModelElement.toString().substringBefore('$')
+                val capitalizedPropertyName = propertyName.substring(0, 1)
+                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
+                val propertyGetter =
+                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
+                val propertyType =
+                    ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
+                add(
+                    BindableProperty(
+                        propertyName, capitalizedPropertyName, propertyType, annotation.twoWay
+                    )
+                )
+            }
         }
+    }
 
     override fun buildViewModelProperty() =
-        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+        with(
+            PropertySpec.builder(
+                "viewModel",
+                viewModelClass.asTypeName().let { if (viewModelIsShared) it.copy(true) else it })
+        ) {
+            if (viewModelIsShared) mutable(true)
+            addModifiers(KModifier.OVERRIDE)
             initializer(
-                "%M<$viewModelClass>()",
-                MemberName("ru.impression.c_logic_base", "obtainViewModel")
+                "%M($viewModelClass::class)",
+                MemberName("ru.impression.c_logic_base", "createViewModel")
             )
             build()
         }
 
-    override fun buildObservingHelperProperty() = with(
+    override fun buildContainerProperty() =
+        with(PropertySpec.builder("container", ClassName("android.view", "View"))) {
+            addModifiers(KModifier.OVERRIDE)
+            initializer("this")
+            build()
+        }
+
+    override fun buildLifecycleOwnerProperty() = with(
         PropertySpec.builder(
-            "observingHelper",
-            ClassName("ru.impression.c_logic_base", "ViewObservingHelper")
+            "lifecycleOwner",
+            ClassName("androidx.lifecycle", "LifecycleOwner")
         )
     ) {
-        initializer("ViewObservingHelper(this)")
+        addModifiers(KModifier.OVERRIDE)
+        initializer("this")
         build()
     }
 
     override fun TypeSpec.Builder.buildRestMembers() {
+        addSuperinterface(ClassName("androidx.lifecycle", "LifecycleOwner"))
         primaryConstructor(buildConstructor())
         addSuperclassConstructorParameter("context")
         addSuperclassConstructorParameter("attrs")
         addSuperclassConstructorParameter("defStyleAttr")
-        addProperty(buildTwoWayBindingObservablesProperty())
+        addProperty(buildLifecycleRegistryProperty())
+        addProperty(buildIsDetachedFromWindowProperty())
+        addFunction(buildGetLifecycleFunction())
+        if (bindableProperties.isNotEmpty()) addFunction(buildStartObservationsFunction())
         addFunction(buildOnAttachedToWindowFunction())
+        addFunction(buildRestoreViewModelFunction())
         addFunction(buildOnDetachedFromWindowFunction())
-        addInitializerBlock(
-            CodeBlock.of(
-                """binding.lifecycleOwner = %M
-binding.viewModel = viewModel
-scheme.initializer?.invoke(this, viewModel)
-""",
-                MemberName("ru.impression.c_logic_base", "activity")
-            )
-        )
-        addType(buildCompanionObject())
+        if (viewModelIsShared) addFunction(buildReleaseViewModelFunction())
+        addInitializerBlock(buildInitializerBlock())
+        //addType(buildCompanionObject())
     }
 
     private fun buildConstructor(): FunSpec = with(FunSpec.constructorBuilder()) {
@@ -81,47 +109,111 @@ scheme.initializer?.invoke(this, viewModel)
             ParameterSpec.builder(
                 "attrs",
                 ClassName("android.util", "AttributeSet").copy(true)
-            ).defaultValue("%L", null).build()
+            ).defaultValue("null").build()
         )
         addParameter(
-            ParameterSpec.builder("defStyleAttr", Int::class).defaultValue("%L", 0).build()
+            ParameterSpec.builder("defStyleAttr", Int::class).defaultValue("0").build()
         )
         addAnnotation(JvmOverloads::class)
         build()
     }
 
-    private fun buildTwoWayBindingObservablesProperty() = with(
-        PropertySpec.builder(
-            "twoWayBindingObservables",
-            ClassName("kotlin.collections", "HashMap").parameterizedBy(
-                ClassName("kotlin", "String"),
-                ClassName("ru.impression.c_logic_base.ComponentViewModel", "Data")
-                    .parameterizedBy(STAR)
+    private fun buildLifecycleRegistryProperty() =
+        with(
+            PropertySpec.builder(
+                "lifecycleRegistry",
+                ClassName("androidx.lifecycle", "LifecycleRegistry")
             )
+        ) {
+            addModifiers(KModifier.PRIVATE)
+            initializer("%T(this)", ClassName("androidx.lifecycle", "LifecycleRegistry"))
+            build()
+        }
+
+    private fun buildIsDetachedFromWindowProperty() =
+        with(PropertySpec.builder("isDetachedFromWindow", Boolean::class.java)) {
+            addModifiers(KModifier.PRIVATE)
+            initializer("false")
+            build()
+        }
+
+    private fun buildInitializerBlock() = with(CodeBlock.builder()) {
+        addStatement(
+            """
+lifecycleRegistry.handleLifecycleEvent(%T.ON_START)
+render()
+startObservations()
+""",
+            ClassName("androidx.lifecycle.Lifecycle.Event")
         )
-    ) {
-        initializer("HashMap<String, Data<*>>()")
         build()
     }
+
+    private fun buildGetLifecycleFunction() = with(FunSpec.builder("getLifecycle")) {
+        addCode(
+            """viewModel = %M($viewModelClass::class)
+renderer.binding.%M(viewModel)
+renderer.binding.executePendingBindings()
+""",
+            MemberName("ru.impression.c_logic_base", "createViewModel"),
+            MemberName("ru.impression.c_logic_base", "setViewModel")
+        )
+        build()
+    }
+
+    private fun buildStartObservationsFunction() =
+        with(FunSpec.builder("startObservations")) {
+            addModifiers(KModifier.OVERRIDE)
+            addCode(
+                """super.startObservations()
+viewModel${if (viewModelIsShared) "?" else ""}.onStatePropertyChangedListener = { property, value ->
+when (property.name) {
+"""
+            )
+            bindableProperties.forEach {
+                addCode(
+                    """     ${it.name} -> ${it.name}AttrChanged.onChanged()
+"""
+                )
+            }
+            addCode(
+                """
+}
+"""
+            )
+            build()
+        }
 
     private fun buildOnAttachedToWindowFunction() = with(FunSpec.builder("onAttachedToWindow")) {
         addModifiers(KModifier.OVERRIDE)
         addCode(
             """super.onAttachedToWindow()
-dataRelationManager.establishRelations()
+lifecycleRegistry.handleLifecycleEvent(%T.ON_RESUME)
 """
         )
-        val viewModelEnclosedElements =
-            (viewModelClass as DeclaredType).asElement().enclosedElements
-        for (viewModelElement in viewModelEnclosedElements) {
-            if (viewModelElement.getAnnotation(Bindable::class.java)?.twoWay != true) continue
-            val propertyName = viewModelElement.toString().substringBefore('$')
-            addCode(
-                """observingHelper.observe(viewModel.$propertyName) { twoWayBindingObservables[%S]?.value = it }
+        if (viewModelIsShared) addCode(
+            """restoreViewModel()
+"""
+        )
+        addCode(
+            """if (isDetachedFromWindow) {
+    isDetachedFromWindow = false
+    startObservations()
+}
+"""
+        )
+        build()
+    }
+
+    private fun buildRestoreViewModelFunction() = with(FunSpec.builder("restoreViewModel")) {
+        addCode(
+            """viewModel = %M($viewModelClass::class)
+renderer.binding.%M(viewModel)
+renderer.binding.executePendingBindings()
 """,
-                propertyName
-            )
-        }
+            MemberName("ru.impression.c_logic_base", "createViewModel"),
+            MemberName("ru.impression.c_logic_base", "setViewModel")
+        )
         build()
     }
 
@@ -130,9 +222,26 @@ dataRelationManager.establishRelations()
             addModifiers(KModifier.OVERRIDE)
             addCode(
                 """super.onDetachedFromWindow()
-observingHelper.stopAllObservations()
+lifecycleRegistry.handleLifecycleEvent(%T.ON_DESTROY)
 """
             )
+            if (viewModelIsShared) addCode(
+                """releaseViewModel()
+"""
+            )
+            build()
+        }
+
+    private fun buildReleaseViewModelFunction() =
+        with(FunSpec.builder("releaseViewModel")) {
+            addCode(
+                """
+viewModel = null
+renderer.binding?.%M(null)
+""",
+                MemberName("ru.impression.c_logic_base", "setViewModel")
+            )
+            addModifiers(KModifier.PRIVATE)
             build()
         }
 
@@ -192,4 +301,11 @@ view.twoWayBindingObservables[%S] = value""",
             build()
         }
     }
+
+    class BindableProperty(
+        val name: String,
+        val capitalizedName: String,
+        val type: TypeMirror,
+        val twoWay: Boolean
+    )
 }
