@@ -17,39 +17,35 @@ class ViewComponentClassBuilder(
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    bindingClass: TypeMirror,
-    viewModelClass: TypeMirror
+    viewModelClass: TypeMirror,
+    private val viewModelIsShared: Boolean
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
     resultClassPackage,
     superclass,
-    bindingClass,
     viewModelClass
 ) {
 
-    private val viewModelIsShared =
-        viewModelClass.getAnnotation(SharedViewModel::class.java) != null
-
     private val bindableProperties = ArrayList<BindableProperty>().apply {
-        val viewModelEnclosedElements =
-            (viewModelClass as DeclaredType).asElement().enclosedElements
-        viewModelEnclosedElements.forEach { viewModelElement ->
-            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
-                val propertyName = viewModelElement.toString().substringBefore('$')
-                val capitalizedPropertyName = propertyName.substring(0, 1)
-                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                val propertyGetter =
-                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
-                val propertyType =
-                    ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
-                add(
-                    BindableProperty(
-                        propertyName, capitalizedPropertyName, propertyType, annotation.twoWay
-                    )
-                )
-            }
-        }
+//        val viewModelEnclosedElements =
+//            (viewModelClass as DeclaredType).asElement().enclosedElements
+//        viewModelEnclosedElements.forEach { viewModelElement ->
+//            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
+//                val propertyName = viewModelElement.toString().substringBefore('$')
+//                val capitalizedPropertyName = propertyName.substring(0, 1)
+//                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
+//                val propertyGetter =
+//                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
+//                val propertyType =
+//                    ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
+//                add(
+//                    BindableProperty(
+//                        propertyName, capitalizedPropertyName, propertyType, annotation.twoWay
+//                    )
+//                )
+//            }
+//        }
     }
 
     override fun buildViewModelProperty() =
@@ -93,13 +89,13 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("defStyleAttr")
         addProperty(buildLifecycleRegistryProperty())
         addProperty(buildIsDetachedFromWindowProperty())
+        addInitializerBlock(buildInitializerBlock())
         addFunction(buildGetLifecycleFunction())
         if (bindableProperties.isNotEmpty()) addFunction(buildStartObservationsFunction())
         addFunction(buildOnAttachedToWindowFunction())
-        addFunction(buildRestoreViewModelFunction())
+        if (viewModelIsShared) addFunction(buildRestoreViewModelFunction())
         addFunction(buildOnDetachedFromWindowFunction())
         if (viewModelIsShared) addFunction(buildReleaseViewModelFunction())
-        addInitializerBlock(buildInitializerBlock())
         //addType(buildCompanionObject())
     }
 
@@ -132,6 +128,7 @@ class ViewComponentClassBuilder(
 
     private fun buildIsDetachedFromWindowProperty() =
         with(PropertySpec.builder("isDetachedFromWindow", Boolean::class.java)) {
+            mutable(true)
             addModifiers(KModifier.PRIVATE)
             initializer("false")
             build()
@@ -139,21 +136,18 @@ class ViewComponentClassBuilder(
 
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
         addStatement(
-            """
-lifecycleRegistry.handleLifecycleEvent(%T.ON_START)
+            """lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_START)
 render()
-startObservations()
-""",
-            ClassName("androidx.lifecycle.Lifecycle.Event")
+startObservations()""",
+            ClassName("androidx.lifecycle", "Lifecycle")
         )
         build()
     }
 
     private fun buildGetLifecycleFunction() = with(FunSpec.builder("getLifecycle")) {
+        addModifiers(KModifier.OVERRIDE)
         addCode(
-            """viewModel = %M($viewModelClass::class)
-renderer.binding.%M(viewModel)
-renderer.binding.executePendingBindings()
+            """return lifecycleRegistry
 """,
             MemberName("ru.impression.c_logic_base", "createViewModel"),
             MemberName("ru.impression.c_logic_base", "setViewModel")
@@ -188,17 +182,18 @@ when (property.name) {
         addModifiers(KModifier.OVERRIDE)
         addCode(
             """super.onAttachedToWindow()
-lifecycleRegistry.handleLifecycleEvent(%T.ON_RESUME)
-"""
+lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_RESUME)
+if (isDetachedFromWindow) {
+  isDetachedFromWindow = false
+""",
+            ClassName("androidx.lifecycle", "Lifecycle")
         )
         if (viewModelIsShared) addCode(
-            """restoreViewModel()
+            """  restoreViewModel()
 """
         )
         addCode(
-            """if (isDetachedFromWindow) {
-    isDetachedFromWindow = false
-    startObservations()
+            """  startObservations()
 }
 """
         )
@@ -208,8 +203,10 @@ lifecycleRegistry.handleLifecycleEvent(%T.ON_RESUME)
     private fun buildRestoreViewModelFunction() = with(FunSpec.builder("restoreViewModel")) {
         addCode(
             """viewModel = %M($viewModelClass::class)
-renderer.binding.%M(viewModel)
-renderer.binding.executePendingBindings()
+renderer.binding?.apply {
+    %M(viewModel)
+    executePendingBindings()
+}
 """,
             MemberName("ru.impression.c_logic_base", "createViewModel"),
             MemberName("ru.impression.c_logic_base", "setViewModel")
@@ -222,8 +219,10 @@ renderer.binding.executePendingBindings()
             addModifiers(KModifier.OVERRIDE)
             addCode(
                 """super.onDetachedFromWindow()
-lifecycleRegistry.handleLifecycleEvent(%T.ON_DESTROY)
-"""
+lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
+isDetachedFromWindow = true
+""",
+                ClassName("androidx.lifecycle", "Lifecycle")
             )
             if (viewModelIsShared) addCode(
                 """releaseViewModel()
@@ -235,8 +234,7 @@ lifecycleRegistry.handleLifecycleEvent(%T.ON_DESTROY)
     private fun buildReleaseViewModelFunction() =
         with(FunSpec.builder("releaseViewModel")) {
             addCode(
-                """
-viewModel = null
+                """viewModel = null
 renderer.binding?.%M(null)
 """,
                 MemberName("ru.impression.c_logic_base", "setViewModel")

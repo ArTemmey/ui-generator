@@ -11,10 +11,6 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 
-interface C : Component<ComponentViewModel, ComponentViewModel> {
-
-    override var viewModel: ComponentViewModel
-}
 
 interface Component<C, VM : ComponentViewModel> {
 

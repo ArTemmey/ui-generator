@@ -10,7 +10,6 @@ abstract class ComponentClassBuilder(
     protected val resultClassName: String,
     protected val resultClassPackage: String,
     protected val superclass: TypeName,
-    protected val bindingClass: TypeMirror,
     protected val viewModelClass: TypeMirror
 ) {
 
@@ -48,6 +47,7 @@ abstract class ComponentClassBuilder(
             ClassName("ru.impression.c_logic_base", "Renderer")
         )
     ) {
+        addModifiers(KModifier.OVERRIDE)
         initializer("Renderer(this)")
         build()
     }

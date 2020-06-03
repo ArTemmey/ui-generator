@@ -3,6 +3,7 @@ package ru.impression.c_logic_processor
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.*
 import ru.impression.c_logic_annotations.MakeComponent
+import ru.impression.c_logic_annotations.SharedViewModel
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
@@ -28,8 +29,7 @@ class CLogicProcessor : AbstractProcessor() {
             element as TypeElement
             val typeArguments = (element.superclass as DeclaredType).typeArguments
             val superclass = typeArguments[0]
-            val bindingClass = typeArguments[1]
-            val viewModelClass = typeArguments[2]
+            val viewModelClass = typeArguments[1]
             val resultClassName = "${element.simpleName}Component"
             val resultClassPackage = processingEnv.elementUtils.getPackageOf(element).toString()
             var resultClass: TypeSpec? = null
@@ -37,13 +37,15 @@ class CLogicProcessor : AbstractProcessor() {
             classIteration@ while (downwardClass.toString() != "none") {
                 when (downwardClass.toString()) {
                     "android.view.ViewGroup" -> {
+                        val viewModelClassString = viewModelClass.toString()
                         resultClass = ViewComponentClassBuilder(
                             element,
                             resultClassName,
                             resultClassPackage,
                             superclass.asTypeName(),
-                            bindingClass,
-                            viewModelClass
+                            viewModelClass,
+                            p1.getElementsAnnotatedWith(SharedViewModel::class.java)
+                                .firstOrNull { it.toString() == viewModelClassString } != null
                         ).build()
                         break@classIteration
                     }
@@ -53,7 +55,6 @@ class CLogicProcessor : AbstractProcessor() {
                             resultClassName,
                             resultClassPackage,
                             superclass.asTypeName(),
-                            bindingClass,
                             viewModelClass
                         ).build()
                         break@classIteration

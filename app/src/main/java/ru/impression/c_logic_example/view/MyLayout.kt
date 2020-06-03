@@ -7,13 +7,13 @@ import ru.impression.c_logic_base.ComponentScheme
 import ru.impression.c_logic_base.ComponentViewModel
 import ru.impression.c_logic_example.databinding.MyLayoutBinding
 
-@MakeComponent
-class MyLayout : ComponentScheme<FrameLayout, MyLayoutViewModel>({
-    if (it.isVisible)
-        MyLayoutBinding::class
-    else
-        null
-})
+//@MakeComponent
+//class MyLayout : ComponentScheme<FrameLayout, MyLayoutViewModel>({
+//    if (it.isVisible)
+//        MyLayoutBinding::class
+//    else
+//        null
+//})
 
 @SharedViewModel
 class MyLayoutViewModel : ComponentViewModel() {

@@ -6,8 +6,8 @@ import ru.impression.c_logic_base.ComponentScheme
 import ru.impression.c_logic_base.ComponentViewModel
 import ru.impression.c_logic_example.databinding.MyTextBinding
 
-@MakeComponent
-class MyText : ComponentScheme<FrameLayout, MyTextBinding, MyTextViewModel>()
+//@MakeComponent
+//class MyText : ComponentScheme<FrameLayout, MyTextBinding, MyTextViewModel>()
 
 class MyTextViewModel : ComponentViewModel() {
 

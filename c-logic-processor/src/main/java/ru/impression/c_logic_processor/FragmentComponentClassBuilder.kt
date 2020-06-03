@@ -9,14 +9,12 @@ class FragmentComponentClassBuilder(
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    bindingClass: TypeMirror,
     viewModelClass: TypeMirror
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
     resultClassPackage,
     superclass,
-    bindingClass,
     viewModelClass
 ) {
 
@@ -46,7 +44,7 @@ class FragmentComponentClassBuilder(
         initializer("this")
         build()
     }
-    
+
     override fun TypeSpec.Builder.buildRestMembers() {
         addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())
@@ -72,8 +70,7 @@ scheme.initializer?.invoke(this, viewModel)"""
             """binding = %T.inflate(inflater, container, false)
 binding.lifecycleOwner = this
 binding.viewModel = viewModel
-return binding.root""",
-            bindingClass
+return binding.root"""
         )
         build()
     }
