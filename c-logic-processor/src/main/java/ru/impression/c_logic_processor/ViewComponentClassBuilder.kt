@@ -305,7 +305,15 @@ class ViewComponentClassBuilder(
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
-            addCode("view.viewModel${if (viewModelIsShared) "?." else "."}${bindableProperty.name} = value${if (!bindableProperty.type.asTypeName().isNullable) " ?: return" else ""}")
+            addCode(
+                """
+                    val property = view.viewModel${if (viewModelIsShared) "?.let { it::${bindableProperty.name} } ?: return" else "::${bindableProperty.name}"}
+                    if (property.returnType.isMarkedNullable)
+                      property.set(value)
+                    else
+                      property.set(value ?: return)
+                """.trimIndent()
+            )
             build()
         }
 

@@ -16,12 +16,13 @@ class MyButton : ComponentScheme<FrameLayout, MyButtonViewModel>({ viewModel ->
         null
 })
 
+@SharedViewModel
 class MyButtonViewModel : ComponentViewModel() {
 
     var isVisible by state(false)
 
-    @Bindable()
-    var text by state<String>("null") { newValue ->
+    @Bindable(true)
+    var text by state<String?>(null) { newValue ->
         print("Now value is $newValue")
     }
 
