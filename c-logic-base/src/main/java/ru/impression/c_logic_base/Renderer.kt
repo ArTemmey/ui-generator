@@ -24,8 +24,8 @@ class Renderer(private val component: Component<*, *>) {
             component.viewModel,
             component.lifecycleOwner
         )
-        binding?.let { oldBinding ->
-            oldBinding.unbind()
+        binding?.let {
+            it.unbind()
             (component.container as? ViewGroup)?.removeAllViews()
         }
         binding = newBinding

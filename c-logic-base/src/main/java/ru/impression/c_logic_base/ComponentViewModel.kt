@@ -50,7 +50,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         }
     }
 
-    internal fun addOnStatePropertyChangedListener(
+    fun addOnStatePropertyChangedListener(
         owner: LifecycleOwner,
         listener: (property: KProperty<*>, value: Any?) -> Unit
     ) {

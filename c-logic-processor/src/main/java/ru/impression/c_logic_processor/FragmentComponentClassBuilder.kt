@@ -45,7 +45,7 @@ class FragmentComponentClassBuilder(
         build()
     }
 
-    override fun TypeSpec.Builder.buildRestMembers() {
+    override fun TypeSpec.Builder.addRestMembers() {
         addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())
     }

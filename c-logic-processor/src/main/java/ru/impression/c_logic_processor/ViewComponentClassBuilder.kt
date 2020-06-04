@@ -1,11 +1,8 @@
 package ru.impression.c_logic_processor
 
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import ru.impression.c_logic_annotations.Bindable
-import ru.impression.c_logic_annotations.SharedViewModel
 import java.util.*
-import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
@@ -28,24 +25,27 @@ class ViewComponentClassBuilder(
 ) {
 
     private val bindableProperties = ArrayList<BindableProperty>().apply {
-//        val viewModelEnclosedElements =
-//            (viewModelClass as DeclaredType).asElement().enclosedElements
-//        viewModelEnclosedElements.forEach { viewModelElement ->
-//            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
-//                val propertyName = viewModelElement.toString().substringBefore('$')
-//                val capitalizedPropertyName = propertyName.substring(0, 1)
-//                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-//                val propertyGetter =
-//                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
-//                val propertyType =
-//                    ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
-//                add(
-//                    BindableProperty(
-//                        propertyName, capitalizedPropertyName, propertyType, annotation.twoWay
-//                    )
-//                )
-//            }
-//        }
+        val viewModelEnclosedElements =
+            (viewModelClass as DeclaredType).asElement().enclosedElements
+        viewModelEnclosedElements.forEach { viewModelElement ->
+            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
+                val propertyName = viewModelElement.toString().substringBefore('$')
+                val capitalizedPropertyName = propertyName.substring(0, 1)
+                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
+                val propertyGetter =
+                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
+                val propertyType = (propertyGetter as ExecutableElement).returnType
+                add(
+                    BindableProperty(
+                        propertyName,
+                        capitalizedPropertyName,
+                        propertyType,
+                        annotation.twoWay,
+                        "${propertyName}AttrChanged"
+                    )
+                )
+            }
+        }
     }
 
     override fun buildViewModelProperty() =
@@ -81,7 +81,7 @@ class ViewComponentClassBuilder(
         build()
     }
 
-    override fun TypeSpec.Builder.buildRestMembers() {
+    override fun TypeSpec.Builder.addRestMembers() {
         addSuperinterface(ClassName("androidx.lifecycle", "LifecycleOwner"))
         primaryConstructor(buildConstructor())
         addSuperclassConstructorParameter("context")
@@ -89,14 +89,18 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("defStyleAttr")
         addProperty(buildLifecycleRegistryProperty())
         addProperty(buildIsDetachedFromWindowProperty())
+        bindableProperties.forEach {
+            if (it.twoWay) addProperty(buildBindablePropertyAttrChangedProperty(it))
+        }
         addInitializerBlock(buildInitializerBlock())
         addFunction(buildGetLifecycleFunction())
-        if (bindableProperties.isNotEmpty()) addFunction(buildStartObservationsFunction())
+        if (bindableProperties.firstOrNull { it.twoWay } != null)
+            addFunction(buildStartObservationsFunction())
         addFunction(buildOnAttachedToWindowFunction())
         if (viewModelIsShared) addFunction(buildRestoreViewModelFunction())
         addFunction(buildOnDetachedFromWindowFunction())
         if (viewModelIsShared) addFunction(buildReleaseViewModelFunction())
-        //addType(buildCompanionObject())
+        addType(buildCompanionObject())
     }
 
     private fun buildConstructor(): FunSpec = with(FunSpec.constructorBuilder()) {
@@ -134,6 +138,19 @@ class ViewComponentClassBuilder(
             build()
         }
 
+    private fun buildBindablePropertyAttrChangedProperty(bindableProperty: BindableProperty) =
+        with(
+            PropertySpec.builder(
+                bindableProperty.attrChangedPropertyName.toString(),
+                ClassName("androidx.databinding", "InverseBindingListener").copy(true)
+            )
+        ) {
+            mutable(true)
+            addModifiers(KModifier.PRIVATE)
+            initializer("null")
+            build()
+        }
+
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
         addStatement(
             """
@@ -163,19 +180,33 @@ class ViewComponentClassBuilder(
             addCode(
                 """
                     super.startObservations()
-                    viewModel${if (viewModelIsShared) "?" else ""}.onStatePropertyChangedListener = { property, value ->
-                    when (property.name) {
                     """.trimIndent()
+            )
+            if (viewModelIsShared) addCode(
+                """
+                    
+                    val viewModel = viewModel ?: return
+                    """.trimIndent()
+            )
+            addCode(
+                """
+                    
+                    viewModel.addOnStatePropertyChangedListener(this) { property, _ ->
+                      when (property) {
+            """.trimIndent()
             )
             bindableProperties.forEach {
                 addCode(
                     """
-                        ${it.name} -> ${it.name}AttrChanged.onChanged()
+                        
+                              viewModel::${it.name} -> ${it.name}AttrChanged?.onChange()
                     """.trimIndent()
                 )
             }
             addCode(
                 """
+                    
+                      }
                     }
                     """.trimIndent()
             )
@@ -233,6 +264,7 @@ class ViewComponentClassBuilder(
             )
             if (viewModelIsShared) addCode(
                 """
+                    
                     releaseViewModel()
                     """.trimIndent()
             )
@@ -253,66 +285,66 @@ class ViewComponentClassBuilder(
         }
 
     private fun buildCompanionObject(): TypeSpec = with(TypeSpec.companionObjectBuilder()) {
-        val viewModelEnclosedElements =
-            (viewModelClass as DeclaredType).asElement().enclosedElements
-        viewModelEnclosedElements.forEach { viewModelElement ->
-            viewModelElement.getAnnotation(Bindable::class.java)?.let {
-                addFunction(
-                    buildBindingFunction(viewModelElement, viewModelEnclosedElements, it.twoWay)
-                )
+        bindableProperties.forEach {
+            addFunction(buildSetBindablePropertyFunction(it))
+            if (it.twoWay) {
+                addFunction(buildSetBindablePropertyAttrChangedFunction(it))
+                addFunction(buildGetBindablePropertyFunction(it))
             }
         }
         build()
     }
 
-    private fun buildBindingFunction(
-        viewModelElement: Element,
-        viewModelEnclosedElements: List<Element>,
-        twoWay: Boolean
-    ): FunSpec {
-        val propertyName = viewModelElement.toString().substringBefore('$')
-        val capitalizedPropertyName = propertyName.substring(0, 1)
-            .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-        val propertyGetter =
-            viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
-        val propertyType =
-            ((propertyGetter as ExecutableElement).returnType as DeclaredType).typeArguments[0]
-        return with(FunSpec.builder("set$capitalizedPropertyName")) {
+    private fun buildSetBindablePropertyFunction(bindableProperty: BindableProperty) =
+        with(FunSpec.builder("set${bindableProperty.capitalizedName}")) {
             addAnnotation(JvmStatic::class.java)
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", propertyName).build()
+                ).addMember("%S", bindableProperty.name).build()
+            )
+            addParameter("view", ClassName(resultClassPackage, resultClassName))
+            addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
+            addCode("view.viewModel${if (viewModelIsShared) "?." else "."}${bindableProperty.name} = value${if (!bindableProperty.type.asTypeName().isNullable) " ?: return" else ""}")
+            build()
+        }
+
+    private fun buildSetBindablePropertyAttrChangedFunction(bindableProperty: BindableProperty) =
+        with(FunSpec.builder("set${bindableProperty.capitalizedName}AttrChanged")) {
+            addAnnotation(JvmStatic::class.java)
+            addAnnotation(
+                AnnotationSpec.builder(
+                    ClassName("androidx.databinding", "BindingAdapter")
+                ).addMember("%S", bindableProperty.attrChangedPropertyName.toString()).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter(
                 "value",
-                if (twoWay)
-                    ClassName(
-                        "ru.impression.c_logic_base.ComponentViewModel",
-                        "Data"
-                    ).parameterizedBy(propertyType.asTypeName().javaToKotlinType())
-                else
-                    propertyType.asTypeName()
+                ClassName("androidx.databinding", "InverseBindingListener").copy(true)
             )
-            if (twoWay)
-                addCode(
-                    """view.twoWayBindingObservables.remove(%S)
-view.viewModel.$propertyName.set(value.get())
-view.twoWayBindingObservables[%S] = value""",
-                    propertyName,
-                    propertyName
-                )
-            else
-                addCode("view.viewModel.$propertyName.set(value.get())")
+            addCode("view.${bindableProperty.attrChangedPropertyName} = value")
             build()
         }
-    }
+
+    private fun buildGetBindablePropertyFunction(bindableProperty: BindableProperty) =
+        with(FunSpec.builder("get${bindableProperty.capitalizedName}")) {
+            addAnnotation(JvmStatic::class.java)
+            addAnnotation(
+                AnnotationSpec.builder(
+                    ClassName("androidx.databinding", "InverseBindingAdapter")
+                ).addMember("attribute = %S", bindableProperty.name).build()
+            )
+            addParameter("view", ClassName(resultClassPackage, resultClassName))
+            returns(bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
+            addCode("return view.viewModel${if (viewModelIsShared) "?." else "."}${bindableProperty.name}")
+            build()
+        }
 
     class BindableProperty(
         val name: String,
         val capitalizedName: String,
         val type: TypeMirror,
-        val twoWay: Boolean
+        val twoWay: Boolean,
+        val attrChangedPropertyName: String?
     )
 }

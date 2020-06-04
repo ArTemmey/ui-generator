@@ -24,7 +24,7 @@ abstract class ComponentClassBuilder(
         addProperty(buildContainerProperty())
         addProperty(buildLifecycleOwnerProperty())
         addProperty(buildRendererProperty())
-        buildRestMembers()
+        addRestMembers()
         build()
     }
 
@@ -52,5 +52,5 @@ abstract class ComponentClassBuilder(
         build()
     }
 
-    abstract fun TypeSpec.Builder.buildRestMembers()
+    abstract fun TypeSpec.Builder.addRestMembers()
 }
