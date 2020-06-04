@@ -1,8 +1,13 @@
 package ru.impression.c_logic_processor
 
 import com.squareup.kotlinpoet.*
+import ru.impression.c_logic_annotations.Bindable
+import java.util.*
+import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
+import kotlin.collections.ArrayList
 
 class FragmentComponentClassBuilder(
     scheme: TypeElement,
@@ -20,9 +25,10 @@ class FragmentComponentClassBuilder(
 
     override fun buildViewModelProperty() =
         with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+            addModifiers(KModifier.OVERRIDE)
             delegate(
-                "lazy { %M<$viewModelClass>() } ",
-                MemberName("ru.impression.c_logic_base", "obtainViewModel")
+                "lazy { %M($viewModelClass::class) } ",
+                MemberName("ru.impression.c_logic_base", "createViewModel")
             )
             build()
         }
@@ -30,7 +36,7 @@ class FragmentComponentClassBuilder(
     override fun buildContainerProperty() =
         with(PropertySpec.builder("container", ClassName("android.view", "View"))) {
             addModifiers(KModifier.OVERRIDE)
-            initializer("this")
+            delegate("lazy { %T(context!!) }", ClassName("android.widget", "FrameLayout"))
             build()
         }
 
@@ -41,21 +47,28 @@ class FragmentComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("this")
+        delegate("lazy { viewLifecycleOwner }")
         build()
     }
 
     override fun TypeSpec.Builder.addRestMembers() {
-        addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())
+        addFunction(buildOnActivityCreatedFunction())
+        bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
     }
 
-    private fun buildOnCreateFunction() = with(FunSpec.builder("onCreate")) {
-        addModifiers(KModifier.OVERRIDE)
-        addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
-        addCode(
-            """dataRelationManager.establishRelations()
-scheme.initializer?.invoke(this, viewModel)"""
+    private fun buildBindableProperty(bindableProperty: BindableProperty) = with(
+        PropertySpec.builder(
+            bindableProperty.name,
+            bindableProperty.type.asTypeName().javaToKotlinType().copy(true)
+        )
+    ) {
+        mutable(true)
+        addModifiers(KModifier.PRIVATE)
+        delegate(
+            "%M(%S)",
+            MemberName("ru.impression.c_logic_base", "argument"),
+            bindableProperty.name
         )
         build()
     }
@@ -67,11 +80,30 @@ scheme.initializer?.invoke(this, viewModel)"""
         addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
         returns(ClassName("android.view", "View").copy(true))
         addCode(
-            """binding = %T.inflate(inflater, container, false)
-binding.lifecycleOwner = this
-binding.viewModel = viewModel
-return binding.root"""
+            """
+                render()
+                return container
+                """.trimIndent()
         )
+        build()
+    }
+
+    private fun buildOnActivityCreatedFunction() = with(FunSpec.builder("onActivityCreated")) {
+        addModifiers(KModifier.OVERRIDE)
+        addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
+        bindableProperties.forEach {
+            addCode(
+                """
+                    val viewModel${it.capitalizedName} = viewModel::${it.name}
+                    if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
+                      viewModel${it.capitalizedName}.set(${it.name})
+                    else
+                      ${it.name}?.let { viewModel${it.capitalizedName}.set(it) }
+                
+                """.trimIndent()
+            )
+        }
+        addCode("startObservations()")
         build()
     }
 }

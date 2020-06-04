@@ -1,13 +1,8 @@
 package ru.impression.c_logic_processor
 
 import com.squareup.kotlinpoet.*
-import ru.impression.c_logic_annotations.Bindable
-import java.util.*
-import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
-import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
-import kotlin.collections.ArrayList
 
 class ViewComponentClassBuilder(
     scheme: TypeElement,
@@ -23,30 +18,6 @@ class ViewComponentClassBuilder(
     superclass,
     viewModelClass
 ) {
-
-    private val bindableProperties = ArrayList<BindableProperty>().apply {
-        val viewModelEnclosedElements =
-            (viewModelClass as DeclaredType).asElement().enclosedElements
-        viewModelEnclosedElements.forEach { viewModelElement ->
-            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
-                val propertyName = viewModelElement.toString().substringBefore('$')
-                val capitalizedPropertyName = propertyName.substring(0, 1)
-                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                val propertyGetter =
-                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
-                val propertyType = (propertyGetter as ExecutableElement).returnType
-                add(
-                    BindableProperty(
-                        propertyName,
-                        capitalizedPropertyName,
-                        propertyType,
-                        annotation.twoWay,
-                        "${propertyName}AttrChanged"
-                    )
-                )
-            }
-        }
-    }
 
     override fun buildViewModelProperty() =
         with(
@@ -141,7 +112,7 @@ class ViewComponentClassBuilder(
     private fun buildBindablePropertyAttrChangedProperty(bindableProperty: BindableProperty) =
         with(
             PropertySpec.builder(
-                bindableProperty.attrChangedPropertyName.toString(),
+                bindableProperty.attrChangedPropertyName,
                 ClassName("androidx.databinding", "InverseBindingListener").copy(true)
             )
         ) {
@@ -323,7 +294,7 @@ class ViewComponentClassBuilder(
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", bindableProperty.attrChangedPropertyName.toString()).build()
+                ).addMember("%S", bindableProperty.attrChangedPropertyName).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter(
@@ -347,12 +318,4 @@ class ViewComponentClassBuilder(
             addCode("return view.viewModel${if (viewModelIsShared) "?." else "."}${bindableProperty.name}")
             build()
         }
-
-    class BindableProperty(
-        val name: String,
-        val capitalizedName: String,
-        val type: TypeMirror,
-        val twoWay: Boolean,
-        val attrChangedPropertyName: String?
-    )
 }
