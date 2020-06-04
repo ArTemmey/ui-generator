@@ -36,7 +36,7 @@ class CLogicProcessor : AbstractProcessor() {
             var downwardClass = superclass
             classIteration@ while (downwardClass.toString() != "none") {
                 when (downwardClass.toString()) {
-                    "android.view.ViewGroup" -> {
+                    "android.view.View" -> {
                         val viewModelClassString = viewModelClass.toString()
                         resultClass = ViewComponentClassBuilder(
                             element,
@@ -68,7 +68,7 @@ class CLogicProcessor : AbstractProcessor() {
                 processingEnv.messager.printMessage(
                     Diagnostic.Kind.ERROR,
                     "Illegal type of superclass for $element. Superclass must be either " +
-                            "out android.view.ViewGroup or out " +
+                            "out android.view.View or out " +
                             "androidx.fragment.app.Fragment"
                 )
                 return false
