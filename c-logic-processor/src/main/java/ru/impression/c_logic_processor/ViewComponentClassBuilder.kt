@@ -136,9 +136,10 @@ class ViewComponentClassBuilder(
 
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
         addStatement(
-            """lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_START)
-render()
-startObservations()""",
+            """
+                lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_START)
+                render()
+                startObservations()""".trimIndent(),
             ClassName("androidx.lifecycle", "Lifecycle")
         )
         build()
@@ -147,8 +148,9 @@ startObservations()""",
     private fun buildGetLifecycleFunction() = with(FunSpec.builder("getLifecycle")) {
         addModifiers(KModifier.OVERRIDE)
         addCode(
-            """return lifecycleRegistry
-""",
+            """
+                return lifecycleRegistry
+            """.trimIndent(),
             MemberName("ru.impression.c_logic_base", "createViewModel"),
             MemberName("ru.impression.c_logic_base", "setViewModel")
         )
@@ -159,21 +161,23 @@ startObservations()""",
         with(FunSpec.builder("startObservations")) {
             addModifiers(KModifier.OVERRIDE)
             addCode(
-                """super.startObservations()
-viewModel${if (viewModelIsShared) "?" else ""}.onStatePropertyChangedListener = { property, value ->
-when (property.name) {
-"""
+                """
+                    super.startObservations()
+                    viewModel${if (viewModelIsShared) "?" else ""}.onStatePropertyChangedListener = { property, value ->
+                    when (property.name) {
+                    """.trimIndent()
             )
             bindableProperties.forEach {
                 addCode(
-                    """     ${it.name} -> ${it.name}AttrChanged.onChanged()
-"""
+                    """
+                        ${it.name} -> ${it.name}AttrChanged.onChanged()
+                    """.trimIndent()
                 )
             }
             addCode(
                 """
-}
-"""
+                    }
+                    """.trimIndent()
             )
             build()
         }
@@ -181,35 +185,37 @@ when (property.name) {
     private fun buildOnAttachedToWindowFunction() = with(FunSpec.builder("onAttachedToWindow")) {
         addModifiers(KModifier.OVERRIDE)
         addCode(
-            """super.onAttachedToWindow()
-lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_RESUME)
-if (isDetachedFromWindow) {
-  isDetachedFromWindow = false
-""",
+            """
+                super.onAttachedToWindow()
+                lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_RESUME)
+                if (isDetachedFromWindow) {
+                  isDetachedFromWindow = false
+                  
+                  """.trimIndent(),
             ClassName("androidx.lifecycle", "Lifecycle")
         )
         if (viewModelIsShared) addCode(
-            """  restoreViewModel()
-"""
+            """
+                restoreViewModel()
+                
+            """.trimIndent()
         )
         addCode(
-            """  startObservations()
-}
-"""
+            """
+                  startObservations()
+                }
+                """.trimIndent()
         )
         build()
     }
 
     private fun buildRestoreViewModelFunction() = with(FunSpec.builder("restoreViewModel")) {
         addCode(
-            """viewModel = %M($viewModelClass::class)
-renderer.binding?.apply {
-    %M(viewModel)
-    executePendingBindings()
-}
-""",
-            MemberName("ru.impression.c_logic_base", "createViewModel"),
-            MemberName("ru.impression.c_logic_base", "setViewModel")
+            """
+                viewModel = %M($viewModelClass::class)
+                render()
+                """.trimIndent(),
+            MemberName("ru.impression.c_logic_base", "createViewModel")
         )
         build()
     }
@@ -218,15 +224,17 @@ renderer.binding?.apply {
         with(FunSpec.builder("onDetachedFromWindow")) {
             addModifiers(KModifier.OVERRIDE)
             addCode(
-                """super.onDetachedFromWindow()
-lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
-isDetachedFromWindow = true
-""",
+                """
+                    super.onDetachedFromWindow()
+                    lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
+                    isDetachedFromWindow = true
+                    """.trimIndent(),
                 ClassName("androidx.lifecycle", "Lifecycle")
             )
             if (viewModelIsShared) addCode(
-                """releaseViewModel()
-"""
+                """
+                    releaseViewModel()
+                    """.trimIndent()
             )
             build()
         }
@@ -234,9 +242,10 @@ isDetachedFromWindow = true
     private fun buildReleaseViewModelFunction() =
         with(FunSpec.builder("releaseViewModel")) {
             addCode(
-                """viewModel = null
-renderer.binding?.%M(null)
-""",
+                """
+                    viewModel = null
+                    render()
+                    """.trimIndent(),
                 MemberName("ru.impression.c_logic_base", "setViewModel")
             )
             addModifiers(KModifier.PRIVATE)

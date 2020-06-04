@@ -25,7 +25,10 @@ interface Component<C, VM : ComponentViewModel> {
     val renderer: Renderer
 
     fun render() {
-        renderer.render(viewModel?.let { scheme.getBindingClass?.invoke(this as C, it) })
+        renderer.render(
+            viewModel?.let { scheme.getBindingClass?.invoke(this as C, it) }
+                ?: renderer.binding?.let { it::class }
+        )
     }
 
     fun startObservations() {
