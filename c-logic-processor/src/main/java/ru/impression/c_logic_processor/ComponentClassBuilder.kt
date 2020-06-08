@@ -4,7 +4,7 @@ import com.squareup.kotlinpoet.*
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import ru.impression.c_logic_annotations.Bindable
+import ru.impression.c_logic_annotations.Prop
 import java.util.*
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.DeclaredType
@@ -22,7 +22,7 @@ abstract class ComponentClassBuilder(
         val viewModelEnclosedElements =
             (viewModelClass as DeclaredType).asElement().enclosedElements
         viewModelEnclosedElements.forEach { viewModelElement ->
-            viewModelElement.getAnnotation(Bindable::class.java)?.let { annotation ->
+            viewModelElement.getAnnotation(Prop::class.java)?.let { annotation ->
                 val propertyName = viewModelElement.toString().substringBefore('$')
                 val capitalizedPropertyName = propertyName.substring(0, 1)
                     .toUpperCase(Locale.getDefault()) + propertyName.substring(1)

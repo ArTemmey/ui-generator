@@ -3,14 +3,14 @@ package ru.impression.c_logic_processor
 import com.squareup.kotlinpoet.*
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 class ViewComponentClassBuilder(
     scheme: TypeElement,
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    viewModelClass: TypeMirror,
-    private val viewModelIsShared: Boolean
+    viewModelClass: TypeMirror
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
@@ -21,11 +21,8 @@ class ViewComponentClassBuilder(
 
     override fun buildViewModelProperty() =
         with(
-            PropertySpec.builder(
-                "viewModel",
-                viewModelClass.asTypeName().let { if (viewModelIsShared) it.copy(true) else it })
+            PropertySpec.builder("viewModel", viewModelClass.asTypeName())
         ) {
-            if (viewModelIsShared) mutable(true)
             addModifiers(KModifier.OVERRIDE)
             initializer(
                 "%M($viewModelClass::class)",
@@ -68,9 +65,7 @@ class ViewComponentClassBuilder(
         if (bindableProperties.firstOrNull { it.twoWay } != null)
             addFunction(buildStartObservationsFunction())
         addFunction(buildOnAttachedToWindowFunction())
-        if (viewModelIsShared) addFunction(buildRestoreViewModelFunction())
         addFunction(buildOnDetachedFromWindowFunction())
-        if (viewModelIsShared) addFunction(buildReleaseViewModelFunction())
         addType(buildCompanionObject())
     }
 
@@ -153,16 +148,10 @@ class ViewComponentClassBuilder(
                     super.startObservations()
                     """.trimIndent()
             )
-            if (viewModelIsShared) addCode(
-                """
-                    
-                    val viewModel = viewModel ?: return
-                    """.trimIndent()
-            )
             addCode(
                 """
                     
-                    viewModel.addOnStatePropertyChangedListener(this) { property, _ ->
+                    viewModel.addOnPropertyChangedListener(this) { property, _ ->
                       when (property) {
             """.trimIndent()
             )
@@ -196,28 +185,11 @@ class ViewComponentClassBuilder(
                   """.trimIndent(),
             ClassName("androidx.lifecycle", "Lifecycle")
         )
-        if (viewModelIsShared) addCode(
-            """
-                restoreViewModel()
-                
-            """.trimIndent()
-        )
         addCode(
             """
                   startObservations()
                 }
                 """.trimIndent()
-        )
-        build()
-    }
-
-    private fun buildRestoreViewModelFunction() = with(FunSpec.builder("restoreViewModel")) {
-        addCode(
-            """
-                viewModel = %M($viewModelClass::class)
-                render()
-                """.trimIndent(),
-            MemberName("ru.impression.c_logic_base", "createViewModel")
         )
         build()
     }
@@ -233,25 +205,6 @@ class ViewComponentClassBuilder(
                     """.trimIndent(),
                 ClassName("androidx.lifecycle", "Lifecycle")
             )
-            if (viewModelIsShared) addCode(
-                """
-                    
-                    releaseViewModel()
-                    """.trimIndent()
-            )
-            build()
-        }
-
-    private fun buildReleaseViewModelFunction() =
-        with(FunSpec.builder("releaseViewModel")) {
-            addCode(
-                """
-                    viewModel = null
-                    render()
-                    """.trimIndent(),
-                MemberName("ru.impression.c_logic_base", "setViewModel")
-            )
-            addModifiers(KModifier.PRIVATE)
             build()
         }
 
@@ -278,12 +231,15 @@ class ViewComponentClassBuilder(
             addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
             addCode(
                 """
-                    val property = view.viewModel${if (viewModelIsShared) "?.let { it::${bindableProperty.name} } ?: return" else "::${bindableProperty.name}"}
+                    if (value == view.viewModel.${bindableProperty.name}) return
+                    val property = view.viewModel::${bindableProperty.name} as %T
                     if (property.returnType.isMarkedNullable)
-                      property.set(value)
+                      property.setter.call(view.viewModel, value)
                     else
-                      property.set(value ?: return)
-                """.trimIndent()
+                      property.setter.call(view.viewModel, value ?: return)
+                """.trimIndent(),
+                ClassName("kotlin.reflect", "KMutableProperty")
+                    .parameterizedBy(STAR)
             )
             build()
         }
@@ -315,7 +271,7 @@ class ViewComponentClassBuilder(
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             returns(bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
-            addCode("return view.viewModel${if (viewModelIsShared) "?." else "."}${bindableProperty.name}")
+            addCode("return view.viewModel.${bindableProperty.name}")
             build()
         }
 }

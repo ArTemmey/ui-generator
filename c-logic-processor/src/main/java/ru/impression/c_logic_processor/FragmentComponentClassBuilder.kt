@@ -1,13 +1,9 @@
 package ru.impression.c_logic_processor
 
 import com.squareup.kotlinpoet.*
-import ru.impression.c_logic_annotations.Bindable
-import java.util.*
-import javax.lang.model.element.ExecutableElement
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import javax.lang.model.element.TypeElement
-import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
-import kotlin.collections.ArrayList
 
 class FragmentComponentClassBuilder(
     scheme: TypeElement,
@@ -64,7 +60,6 @@ class FragmentComponentClassBuilder(
         )
     ) {
         mutable(true)
-        addModifiers(KModifier.PRIVATE)
         delegate(
             "%M(%S)",
             MemberName("ru.impression.c_logic_base", "argument"),
@@ -82,7 +77,7 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 render()
-                return container
+                return this.container
                 """.trimIndent()
         )
         build()
@@ -94,13 +89,18 @@ class FragmentComponentClassBuilder(
         bindableProperties.forEach {
             addCode(
                 """
-                    val viewModel${it.capitalizedName} = viewModel::${it.name}
-                    if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
-                      viewModel${it.capitalizedName}.set(${it.name})
-                    else
-                      ${it.name}?.let { viewModel${it.capitalizedName}.set(it) }
+                    super.onActivityCreated(savedInstanceState)
+                    if (${it.name} != viewModel.${it.name}) {
+                      val viewModel${it.capitalizedName} = viewModel::${it.name} as %T
+                      if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
+                        viewModel${it.capitalizedName}.setter.call(viewModel, ${it.name})
+                      else
+                        ${it.name}?.let { viewModel${it.capitalizedName}.setter.call(viewModel, it) }
+                    }
                 
-                """.trimIndent()
+                """.trimIndent(),
+                ClassName("kotlin.reflect", "KMutableProperty")
+                    .parameterizedBy(STAR)
             )
         }
         addCode("startObservations()")

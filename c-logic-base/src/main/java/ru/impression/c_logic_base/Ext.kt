@@ -34,7 +34,7 @@ val View.activity: AppCompatActivity?
 
 fun KClass<out ViewDataBinding>.inflate(
     container: ViewGroup,
-    viewModel: ComponentViewModel?,
+    viewModel: ComponentViewModel,
     lifecycleOwner: LifecycleOwner
 ) = (java.getMethod(
     "inflate",
@@ -51,9 +51,8 @@ fun KClass<out ViewDataBinding>.inflate(
     setViewModel(viewModel)
 }
 
-fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
-    this::class.java.getMethod("setViewModel", ComponentViewModel::class.java)
-        .invoke(this, viewModel)
+fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
+    this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
 }
 
 fun <T : ComponentViewModel> Any.createViewModel(viewModelClass: KClass<T>): T {

@@ -37,15 +37,12 @@ class CLogicProcessor : AbstractProcessor() {
             classIteration@ while (downwardClass.toString() != "none") {
                 when (downwardClass.toString()) {
                     "android.view.View" -> {
-                        val viewModelClassString = viewModelClass.toString()
                         resultClass = ViewComponentClassBuilder(
                             element,
                             resultClassName,
                             resultClassPackage,
                             superclass.asTypeName(),
-                            viewModelClass,
-                            p1.getElementsAnnotatedWith(SharedViewModel::class.java)
-                                .firstOrNull { it.toString() == viewModelClassString } != null
+                            viewModelClass
                         ).build()
                         break@classIteration
                     }

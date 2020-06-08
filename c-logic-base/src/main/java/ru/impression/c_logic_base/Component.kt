@@ -1,14 +1,10 @@
 package ru.impression.c_logic_base
 
 import android.view.View
-import android.view.ViewGroup
-import androidx.core.view.children
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import ru.impression.c_logic_annotations.SharedViewModel
-import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 
 
@@ -16,7 +12,7 @@ interface Component<C, VM : ComponentViewModel> {
 
     val scheme: ComponentScheme<C, VM>
 
-    val viewModel: VM?
+    val viewModel: VM
 
     val container: View
 
@@ -25,12 +21,10 @@ interface Component<C, VM : ComponentViewModel> {
     val renderer: Renderer
 
     fun render() {
-        val viewModel = viewModel ?: return renderer.render(renderer.binding?.let { it::class })
         renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel))
     }
 
     fun startObservations() {
-        val viewModel = viewModel ?: return
         viewModel.stateChange.observe(lifecycleOwner, Observer { render() })
         viewModel.sharedProperties.forEach { viewModelAndProperties ->
             if (viewModelAndProperties.key.findAnnotation<SharedViewModel>() == null)
@@ -39,12 +33,11 @@ interface Component<C, VM : ComponentViewModel> {
                             "${viewModelAndProperties.key}, that is not shared view model."
                 )
             val sourceViewModel = createViewModel(viewModelAndProperties.key)
-            sourceViewModel.addOnStatePropertyChangedListener(
+            sourceViewModel.addOnPropertyChangedListener(
                 lifecycleOwner,
                 { property, value ->
-                    viewModelAndProperties.value[property]?.forEach {
-                        (it as KMutableProperty1<ComponentViewModel, Any?>).set(viewModel, value)
-                    }
+                    viewModelAndProperties.value[property]
+                        ?.forEach { it.setter.call(viewModel, value) }
                 }
             )
         }
