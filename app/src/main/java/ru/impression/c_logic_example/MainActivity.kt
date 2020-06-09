@@ -2,7 +2,7 @@ package ru.impression.c_logic_example
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import ru.impression.c_logic_example.fragment.MyFragmentComponent
+import ru.impression.c_logic_example.fragment.MainFragmentComponent
 
 class MainActivity : AppCompatActivity() {
 
@@ -10,7 +10,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.container)
         supportFragmentManager.beginTransaction()
-            .replace(R.id.container, MyFragmentComponent().apply { text = "Hello world!" })
+            .replace(R.id.container, MainFragmentComponent().apply { welcomeText = "Hello world!" })
             .commit()
     }
 }

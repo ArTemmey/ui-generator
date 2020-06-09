@@ -93,14 +93,16 @@ class FragmentComponentClassBuilder(
                     if (${it.name} != viewModel.${it.name}) {
                       val viewModel${it.capitalizedName} = viewModel::${it.name} as %T
                       if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
-                        viewModel${it.capitalizedName}.setter.call(viewModel, ${it.name})
+                        viewModel${it.capitalizedName}.%M(viewModel, ${it.name})
                       else
-                        ${it.name}?.let { viewModel${it.capitalizedName}.setter.call(viewModel, it) }
+                        ${it.name}?.let { viewModel${it.capitalizedName}.%M(viewModel, it) }
                     }
                 
                 """.trimIndent(),
                 ClassName("kotlin.reflect", "KMutableProperty")
-                    .parameterizedBy(STAR)
+                    .parameterizedBy(STAR),
+                MemberName("ru.impression.c_logic_base", "set"),
+                MemberName("ru.impression.c_logic_base", "set")
             )
         }
         addCode("startObservations()")

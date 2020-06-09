@@ -1,7 +1,7 @@
 package ru.impression.c_logic_base
 
-import android.content.Context
 import android.content.ContextWrapper
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,15 +10,11 @@ import androidx.core.os.bundleOf
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import ru.impression.c_logic_annotations.SharedViewModel
 import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty1
+import kotlin.reflect.*
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
@@ -67,30 +63,36 @@ fun <T : ComponentViewModel> Any.createViewModel(viewModelClass: KClass<T>): T {
     }
 }
 
+fun KProperty<*>.get(receiver: Any?) =
+    when (this) {
+        is KProperty0<*> -> get()
+        is KProperty1<*, *> -> (this as KProperty1<Any?, Any?>).get(receiver)
+        else -> throw UnsupportedOperationException("Unsupported property")
+    }
+
+fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
+    when (this) {
+        is KMutableProperty0<*> -> (this as KMutableProperty0<Any?>).set(value)
+        is KMutableProperty1<*, *> -> (this as KMutableProperty1<Any?, Any?>).set(receiver, value)
+    }
+}
+
 fun <R, T> R.argument(name: String): ReadWriteProperty<R, T?> where R : Fragment, R : Component<*, *> =
     ArgumentImpl(this, name)
 
 private class ArgumentImpl<R, T>(private val fragment: R, private val name: String) :
     ReadWriteProperty<R, T?> where R : Fragment, R : Component<*, *> {
 
-    override fun getValue(thisRef: R, property: KProperty<*>): T? = fragment.view
-        ?.let {
-            fragment.viewModel?.let { viewModel ->
-                (viewModel::class.members.firstOrNull { it.name == name }
-                        as? KProperty1<ComponentViewModel, T>)?.get(viewModel)
-            }
-        }
-        ?: fragment.arguments?.get(name) as? T
+    override fun getValue(thisRef: R, property: KProperty<*>): T? =
+        fragment.arguments?.get(name) as? T
 
     override fun setValue(thisRef: R, property: KProperty<*>, value: T?) {
-        fragment.arguments?.putAll(bundleOf(name to value))
-        fragment.view?.let {
-            fragment.viewModel?.let { viewModel ->
-                (viewModel::class.members.firstOrNull { it.name == name }
-                        as? KMutableProperty1<ComponentViewModel, T?>)?.apply {
-                    if (value != null || returnType.isMarkedNullable) set(viewModel, value)
-                }
+        val arguments = fragment.arguments ?: Bundle().also { fragment.arguments = it }
+        arguments.putAll(bundleOf(name to value))
+        if (fragment.isResumed)
+            (fragment.viewModel::class.members.firstOrNull { it.name == name }
+                    as? KMutableProperty<*>)?.apply {
+                if (value != null || returnType.isMarkedNullable) set(fragment.viewModel, value)
             }
-        }
     }
 }

@@ -152,15 +152,16 @@ class ViewComponentClassBuilder(
                 """
                     
                     viewModel.addOnPropertyChangedListener(this) { property, _ ->
-                      when (property) {
+                      when (property.name) {
             """.trimIndent()
             )
             bindableProperties.forEach {
                 addCode(
                     """
                         
-                              viewModel::${it.name} -> ${it.name}AttrChanged?.onChange()
-                    """.trimIndent()
+                              %S -> ${it.name}AttrChanged?.onChange()
+                    """.trimIndent(),
+                    it.name
                 )
             }
             addCode(
@@ -234,12 +235,14 @@ class ViewComponentClassBuilder(
                     if (value == view.viewModel.${bindableProperty.name}) return
                     val property = view.viewModel::${bindableProperty.name} as %T
                     if (property.returnType.isMarkedNullable)
-                      property.setter.call(view.viewModel, value)
+                      property.%M(view.viewModel, value)
                     else
-                      property.setter.call(view.viewModel, value ?: return)
+                      property.%M(view.viewModel, value ?: return)
                 """.trimIndent(),
                 ClassName("kotlin.reflect", "KMutableProperty")
-                    .parameterizedBy(STAR)
+                    .parameterizedBy(STAR),
+                MemberName("ru.impression.c_logic_base", "set"),
+                MemberName("ru.impression.c_logic_base", "set")
             )
             build()
         }

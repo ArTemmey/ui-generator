@@ -26,8 +26,10 @@ abstract class ComponentClassBuilder(
                 val propertyName = viewModelElement.toString().substringBefore('$')
                 val capitalizedPropertyName = propertyName.substring(0, 1)
                     .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                val propertyGetter =
-                    viewModelEnclosedElements.first { it.toString() == "get$capitalizedPropertyName()" }
+                val propertyGetter = viewModelEnclosedElements.first {
+                    it.toString() == "get$capitalizedPropertyName()"
+                            || it.toString() == "$propertyName()"
+                }
                 val propertyType = (propertyGetter as ExecutableElement).returnType
                 add(
                     BindableProperty(

@@ -1,6 +1,5 @@
 package ru.impression.c_logic_base
 
-import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -14,7 +13,7 @@ import kotlin.reflect.KProperty
 abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     @PublishedApi
-    internal val stateChange = SingleTakenLiveData<Unit>()
+    internal val render = LiveCommand()
 
     @PublishedApi
     internal val sharedProperties =
@@ -29,10 +28,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     ): ReadWriteProperty<ComponentViewModel, T> =
         object : ObservableImpl<T>(initialValue, onChanged) {
             override fun notifyPropertyChanged(property: KMutableProperty<*>, value: T) {
-                if (Thread.currentThread() == Looper.getMainLooper().thread)
-                    stateChange.value = Unit
-                else
-                    stateChange.postValue(Unit)
+                render()
                 callOnPropertyChangedListeners(property, value)
             }
         }
