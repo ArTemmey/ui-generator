@@ -8,10 +8,10 @@
 In your root build.gradle:
 ```gradle
 allprojects {
-	repositories {
-		...
+    repositories {
+        ...
 		maven { url 'https://jitpack.io' }
-	}
+    }
 }
 ```
 In your app/build.gradle:
@@ -130,7 +130,7 @@ class MyScrollView : ComponentScheme<ScrollView, MyScrollViewModel>({ viewModel 
     if(viewModel.showFirstLayout)
         FirstLayoutBinding::class
     else
-	SecondLayoutBinding::class
+		SecondLayoutBinding::class
 })
 ```
 This lambda is called at the same time as data binding, that is, after a state change. In essence, this is also data binding, but to a super component. In addition to the ViewModel, a super component is passed to this lambda as `this`, and you can bind any data to it:
