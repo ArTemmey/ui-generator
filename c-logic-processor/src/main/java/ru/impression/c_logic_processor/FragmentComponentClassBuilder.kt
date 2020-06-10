@@ -49,6 +49,7 @@ class FragmentComponentClassBuilder(
 
     override fun TypeSpec.Builder.addRestMembers() {
         addFunction(buildOnCreateViewFunction())
+        addFunction(buildRenderFunction())
         addFunction(buildOnActivityCreatedFunction())
         bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
     }
@@ -79,6 +80,23 @@ class FragmentComponentClassBuilder(
                 render()
                 return this.container
                 """.trimIndent()
+        )
+        build()
+    }
+
+    private fun buildRenderFunction() = with(FunSpec.builder("render")) {
+        addModifiers(KModifier.OVERRIDE)
+        addCode(
+            """
+                super.render()
+                renderer.currentBinding?.root?.layoutParams?.let { 
+                  container.layoutParams?.apply { 
+                    width = it.width 
+                    height = it.height
+                  }
+                }
+                """.trimIndent(),
+            ClassName("android.view.ViewGroup", "LayoutParams")
         )
         build()
     }

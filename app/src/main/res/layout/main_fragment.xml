@@ -11,10 +11,10 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:gravity="center"
         android:orientation="vertical">
 
-        <ru.impression.c_logic_example.view.WelcomeTextComponent
-            animation="@={viewModel.welcomeTextAnimation}"
+        <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@{viewModel.welcomeText}"
@@ -23,14 +23,24 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.toggleWelcomeTextVisibility()}"
-            android:text="Toggle welcome text visibility" />
+            android:onClick="@{() -> viewModel.toggleVisibility()}"
+            android:text="Toggle visibility" />
+
+        <ru.impression.c_logic_example.view.TextEditorComponent
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <ru.impression.c_logic_example.view.AnimatedTextComponent
+            animation="@={viewModel.textAnimation}"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.animateWelcomeText()}"
-            android:text="Animate welcome text" />
+            android:onClick="@{() -> viewModel.animate()}"
+            android:text="Animate" />
 
     </LinearLayout>
 

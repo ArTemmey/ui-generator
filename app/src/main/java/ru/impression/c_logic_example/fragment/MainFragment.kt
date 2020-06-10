@@ -10,7 +10,8 @@ import ru.impression.c_logic_base.ComponentScheme
 import ru.impression.c_logic_base.ComponentViewModel
 import ru.impression.c_logic_example.context
 import ru.impression.c_logic_example.databinding.MainFragmentBinding
-import ru.impression.c_logic_example.view.WelcomeText
+import ru.impression.c_logic_example.view.AnimatedText
+import ru.impression.c_logic_example.view.TextEditorViewModel
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -25,16 +26,20 @@ class MainFragmentViewModel : ComponentViewModel() {
 
     var welcomeTextVisibility by state(VISIBLE)
 
-    var welcomeTextAnimation by state<WelcomeText.Animation?>(null) {
+    var textAnimation by state<AnimatedText.Animation?>(null) {
         Toast.makeText(context, "Current animation in ${it?.name}", Toast.LENGTH_SHORT).show()
     }
 
-    fun toggleWelcomeTextVisibility() {
+    init {
+        ::welcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
+    }
+
+    fun toggleVisibility() {
         welcomeTextVisibility = if (welcomeTextVisibility == VISIBLE) INVISIBLE else VISIBLE
     }
 
-    fun animateWelcomeText() {
-        welcomeTextAnimation =
-            WelcomeText.Animation.values()[Random.nextInt(WelcomeText.Animation.values().indices)]
+    fun animate() {
+        textAnimation =
+            AnimatedText.Animation.values()[Random.nextInt(AnimatedText.Animation.values().indices)]
     }
 }
