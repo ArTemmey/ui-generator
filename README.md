@@ -128,9 +128,9 @@ Suppose you need to display one or another layout, depending on the condition. H
 @MakeComponent
 class MyScrollView : ComponentScheme<ScrollView, MyScrollViewModel>({ viewModel ->
     if(viewModel.showFirstLayout)
-	    FirstLayoutBinding::class
-	else
-		SecondLayoutBinding::class
+        FirstLayoutBinding::class
+    else
+	SecondLayoutBinding::class
 })
 ```
 This lambda is called at the same time as data binding, that is, after a state change. In essence, this is also data binding, but to a super component. In addition to the ViewModel, a super component is passed to this lambda as `this`, and you can bind any data to it:
