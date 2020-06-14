@@ -5,7 +5,7 @@
 
         <variable
             name="viewModel"
-            type="ru.impression.c_logic_example.fragment.MainFragmentViewModel" />
+            type="ru.impression.ui_generator_example.fragment.MainFragmentViewModel" />
     </data>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -26,11 +26,11 @@
             android:onClick="@{() -> viewModel.toggleVisibility()}"
             android:text="Toggle visibility" />
 
-        <ru.impression.c_logic_example.view.TextEditorComponent
+        <ru.impression.ui_generator_example.view.TextEditorComponent
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
-        <ru.impression.c_logic_example.view.AnimatedTextComponent
+        <ru.impression.ui_generator_example.view.AnimatedTextComponent
             animation="@={viewModel.textAnimation}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -11,9 +11,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/c-logic-annotations" />
-            <option value="$PROJECT_DIR$/c-logic-base" />
-            <option value="$PROJECT_DIR$/c-logic-processor" />
+            <option value="$PROJECT_DIR$/ui-generator-annotations" />
+            <option value="$PROJECT_DIR$/ui-generator-base" />
+            <option value="$PROJECT_DIR$/ui-generator-processor" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
