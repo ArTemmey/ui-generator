@@ -18,12 +18,14 @@ import ru.impression.ui_generator_example.translateRight
 class AnimatedText : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({ viewModel ->
     // Use binding adapters as they are safe if you re-set the same value
     TextViewBindingAdapter.setText(this, viewModel.text)
-    clearAnimation()
-    when (viewModel.animation) {
-        Animation.FADE_IN -> fadeIn(1000) { viewModel.onAnimationCompleted() }
-        Animation.FADE_OUT -> fadeOut(1000) { viewModel.onAnimationCompleted() }
-        Animation.TRANSLATE_LEFT -> translateLeft(1000) { viewModel.onAnimationCompleted() }
-        Animation.TRANSLATE_RIGHT -> translateRight(1000) { viewModel.onAnimationCompleted() }
+    viewModel.animation?.let {
+        clearAnimation()
+        when (it) {
+            Animation.FADE_IN -> fadeIn(1000) { viewModel.onAnimationCompleted() }
+            Animation.FADE_OUT -> fadeOut(1000) { viewModel.onAnimationCompleted() }
+            Animation.TRANSLATE_LEFT -> translateLeft(1000) { viewModel.onAnimationCompleted() }
+            Animation.TRANSLATE_RIGHT -> translateRight(1000) { viewModel.onAnimationCompleted() }
+        }
     }
     null
 }) {
