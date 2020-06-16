@@ -104,10 +104,15 @@ class FragmentComponentClassBuilder(
     private fun buildOnActivityCreatedFunction() = with(FunSpec.builder("onActivityCreated")) {
         addModifiers(KModifier.OVERRIDE)
         addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
+        addCode(
+            """
+                super.onActivityCreated(savedInstanceState)
+        
+        """.trimIndent()
+        )
         bindableProperties.forEach {
             addCode(
                 """
-                    super.onActivityCreated(savedInstanceState)
                     if (${it.name} != viewModel.${it.name}) {
                       val viewModel${it.capitalizedName} = viewModel::${it.name} as %T
                       if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
