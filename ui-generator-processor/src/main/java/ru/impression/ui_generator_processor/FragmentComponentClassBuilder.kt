@@ -22,23 +22,21 @@ class FragmentComponentClassBuilder(
     override fun buildViewModelProperty() =
         with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
             addModifiers(KModifier.OVERRIDE)
-            delegate(
-                "lazy { %M($viewModelClass::class) } ",
-                MemberName("ru.impression.ui_generator_base", "createViewModel")
-            )
+            delegate("lazy { createViewModel($viewModelClass::class) } ")
             build()
         }
 
     override fun buildContainerProperty() =
-        with(PropertySpec.builder("container", ClassName("android.view", "View"))) {
+        with(PropertySpec.builder("container", ClassName("android.view", "View").copy(true))) {
+            mutable(true)
             addModifiers(KModifier.OVERRIDE)
-            delegate("lazy { %T(context!!) }", ClassName("android.widget", "FrameLayout"))
+            initializer("null")
             build()
         }
 
-    override fun buildLifecycleOwnerProperty() = with(
+    override fun buildBoundLifecycleOwnerProperty() = with(
         PropertySpec.builder(
-            "lifecycleOwner",
+            "boundLifecycleOwner",
             ClassName("androidx.lifecycle", "LifecycleOwner")
         )
     ) {
@@ -49,7 +47,6 @@ class FragmentComponentClassBuilder(
 
     override fun TypeSpec.Builder.addRestMembers() {
         addFunction(buildOnCreateViewFunction())
-        addFunction(buildRenderFunction())
         addFunction(buildOnActivityCreatedFunction())
         bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
     }
@@ -77,26 +74,10 @@ class FragmentComponentClassBuilder(
         returns(ClassName("android.view", "View").copy(true))
         addCode(
             """
-                render()
-                return this.container
+                this.container = container
+                render(false)
+                return renderer.currentBinding?.root
                 """.trimIndent()
-        )
-        build()
-    }
-
-    private fun buildRenderFunction() = with(FunSpec.builder("render")) {
-        addModifiers(KModifier.OVERRIDE)
-        addCode(
-            """
-                super.render()
-                renderer.currentBinding?.root?.layoutParams?.let { 
-                  container.layoutParams?.apply { 
-                    width = it.width 
-                    height = it.height
-                  }
-                }
-                """.trimIndent(),
-            ClassName("android.view.ViewGroup", "LayoutParams")
         )
         build()
     }

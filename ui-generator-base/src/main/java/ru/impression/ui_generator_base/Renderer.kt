@@ -7,9 +7,10 @@ import kotlin.reflect.KClass
 class Renderer(private val component: Component<*, *>) {
 
     var currentBinding: ViewDataBinding? = null
+
     var currentBindingClass: KClass<out ViewDataBinding>? = null
 
-    fun render(newBindingClass: KClass<out ViewDataBinding>?) {
+    fun render(newBindingClass: KClass<out ViewDataBinding>?, attachToContainer: Boolean) {
         currentBinding?.let {
             if (newBindingClass != null && newBindingClass == currentBindingClass) {
                 it.setViewModel(component.viewModel)
@@ -23,7 +24,8 @@ class Renderer(private val component: Component<*, *>) {
             component.container as? ViewGroup
                 ?: throw UnsupportedOperationException("Component must be ViewGroup"),
             component.viewModel,
-            component.lifecycleOwner
+            component.boundLifecycleOwner,
+            attachToContainer
         )?.apply { executePendingBindings() }
         currentBindingClass = newBindingClass
     }

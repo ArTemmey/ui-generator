@@ -31,7 +31,8 @@ val View.activity: AppCompatActivity?
 fun KClass<out ViewDataBinding>.inflate(
     container: ViewGroup,
     viewModel: ComponentViewModel,
-    lifecycleOwner: LifecycleOwner
+    lifecycleOwner: LifecycleOwner,
+    attachToRoot: Boolean
 ) = (java.getMethod(
     "inflate",
     LayoutInflater::class.java,
@@ -41,7 +42,7 @@ fun KClass<out ViewDataBinding>.inflate(
     null,
     LayoutInflater.from(container.context),
     container,
-    true
+    attachToRoot
 ) as ViewDataBinding).apply {
     this.lifecycleOwner = lifecycleOwner
     setViewModel(viewModel)
@@ -49,18 +50,6 @@ fun KClass<out ViewDataBinding>.inflate(
 
 fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
     this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
-}
-
-fun <T : ComponentViewModel> Any.createViewModel(viewModelClass: KClass<T>): T {
-    val activity =
-        (this as? View)?.activity ?: (this as? Fragment)?.activity
-        ?: return viewModelClass.createInstance()
-    return when {
-        viewModelClass.findAnnotation<SharedViewModel>() != null ->
-            ViewModelProvider(activity)[viewModelClass.java]
-        this is ViewModelStoreOwner -> ViewModelProvider(this)[viewModelClass.java]
-        else -> viewModelClass.createInstance()
-    }
 }
 
 fun KProperty<*>.get(receiver: Any?) =
@@ -92,7 +81,9 @@ private class ArgumentImpl<R, T>(private val fragment: R, private val name: Stri
         if (fragment.isResumed)
             (fragment.viewModel::class.members.firstOrNull { it.name == name }
                     as? KMutableProperty<*>)?.apply {
-                if (value != null || returnType.isMarkedNullable) set(fragment.viewModel, value)
+                if (value != get(fragment.viewModel)
+                    && (value != null || returnType.isMarkedNullable)
+                ) set(fragment.viewModel, value)
             }
     }
 }

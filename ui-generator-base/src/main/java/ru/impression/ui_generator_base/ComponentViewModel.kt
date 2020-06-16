@@ -12,6 +12,8 @@ import kotlin.reflect.KProperty
 
 abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
+    var owner: LifecycleOwner? = null
+
     @PublishedApi
     internal val render = LiveCommand()
 
@@ -75,8 +77,18 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             onPropertyChangedListeners.remove(source)
             source.lifecycle.removeObserver(this)
+            if (source === owner) {
+                owner = null
+                onPropertyChangedListeners.keys.forEach { it.lifecycle.removeObserver(this) }
+                onPropertyChangedListeners.clear()
+            }
         }
+        if (source === owner) onLifecycleEvent(event)
     }
+
+    open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
+
+    public override fun onCleared() = Unit
 
     internal abstract class ObservableImpl<T>(
         initialValue: T,
@@ -88,7 +100,6 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
-            if (this.value == value) return
             this.value = value
             onChanged?.invoke(value)
             notifyPropertyChanged(property as KMutableProperty<*>, value)

@@ -24,10 +24,7 @@ class ViewComponentClassBuilder(
             PropertySpec.builder("viewModel", viewModelClass.asTypeName())
         ) {
             addModifiers(KModifier.OVERRIDE)
-            initializer(
-                "%M($viewModelClass::class)",
-                MemberName("ru.impression.ui_generator_base", "createViewModel")
-            )
+            initializer("createViewModel($viewModelClass::class)")
             build()
         }
 
@@ -38,9 +35,9 @@ class ViewComponentClassBuilder(
             build()
         }
 
-    override fun buildLifecycleOwnerProperty() = with(
+    override fun buildBoundLifecycleOwnerProperty() = with(
         PropertySpec.builder(
-            "lifecycleOwner",
+            "boundLifecycleOwner",
             ClassName("androidx.lifecycle", "LifecycleOwner")
         )
     ) {
@@ -130,13 +127,7 @@ class ViewComponentClassBuilder(
 
     private fun buildGetLifecycleFunction() = with(FunSpec.builder("getLifecycle")) {
         addModifiers(KModifier.OVERRIDE)
-        addCode(
-            """
-                return lifecycleRegistry
-            """.trimIndent(),
-            MemberName("ru.impression.ui_generator_base", "createViewModel"),
-            MemberName("ru.impression.ui_generator_base", "setViewModel")
-        )
+        addCode("return lifecycleRegistry")
         build()
     }
 
@@ -182,15 +173,10 @@ class ViewComponentClassBuilder(
                 lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_RESUME)
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
-                  
-                  """.trimIndent(),
-            ClassName("androidx.lifecycle", "Lifecycle")
-        )
-        addCode(
-            """
                   startObservations()
                 }
-                """.trimIndent()
+                """.trimIndent(),
+            ClassName("androidx.lifecycle", "Lifecycle")
         )
         build()
     }
@@ -202,6 +188,7 @@ class ViewComponentClassBuilder(
                 """
                     super.onDetachedFromWindow()
                     lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
+                    viewModel.onCleared()
                     isDetachedFromWindow = true
                     """.trimIndent(),
                 ClassName("androidx.lifecycle", "Lifecycle")

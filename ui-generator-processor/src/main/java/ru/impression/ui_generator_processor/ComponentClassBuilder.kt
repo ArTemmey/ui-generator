@@ -53,7 +53,7 @@ abstract class ComponentClassBuilder(
         addProperty(buildSchemeProperty())
         addProperty(buildViewModelProperty())
         addProperty(buildContainerProperty())
-        addProperty(buildLifecycleOwnerProperty())
+        addProperty(buildBoundLifecycleOwnerProperty())
         addProperty(buildRendererProperty())
         addRestMembers()
         build()
@@ -70,7 +70,7 @@ abstract class ComponentClassBuilder(
 
     protected abstract fun buildContainerProperty(): PropertySpec
 
-    protected abstract fun buildLifecycleOwnerProperty(): PropertySpec
+    protected abstract fun buildBoundLifecycleOwnerProperty(): PropertySpec
 
     private fun buildRendererProperty() = with(
         PropertySpec.builder(

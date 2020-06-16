@@ -21,17 +21,21 @@ class MainFragment :
 
 class MainFragmentViewModel : ComponentViewModel() {
 
+    val welcomeText get() = customWelcomeText ?: defaultWelcomeText
+
     @Prop
-    var welcomeText by state<String?>(null)
+    var defaultWelcomeText by state<String?>(null)
+
+    var customWelcomeText by state<String?>(null)
+
+    init {
+        ::customWelcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
+    }
 
     var welcomeTextVisibility by state(VISIBLE)
 
     var textAnimation by state<AnimatedText.Animation?>(null) {
         Toast.makeText(context, "Current animation in ${it?.name}", Toast.LENGTH_SHORT).show()
-    }
-
-    init {
-        ::welcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
     }
 
     fun toggleVisibility() {

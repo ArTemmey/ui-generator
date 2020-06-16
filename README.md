@@ -176,6 +176,4 @@ class MyPlainViewModel : ComponentViewModel() {
 ```
 A ViewModel with a shared property is marked with `SharedViewModel` annotation, and the shared property is declared by the `observable` or `state` delegate. Then, in the observing ViewModel, in the initial block, using `isMutableBy` method, it is indicated which property values will be duplicated to your property (your property must be a var).
 
-Consider using the `observable` delegate wherever you need to observe changes of a variable, because it, unlike `kotlin.properties.Delegates.observable`, does not call `onChanged` if the new value is equal to the old.
-
 ***For detailed examples see module `app`.***
