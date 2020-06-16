@@ -78,13 +78,27 @@ showFragment(MyFragmentComponent().apply { myText = "Hello world!" })
 Now let's imagine a similar example, but you will have a FrameLayout to which the text is bound, which is then displayed in the TextView. And here is how you do it:
 ```kotlin
 @MakeComponent
-class MyLayout : ComponentScheme<FrameLayout, MyLayoutViewModel>({ MyLayoutBinding::class }) // my_layout.xml is the same as my_fragment.xml
+class MyLayout : ComponentScheme<FrameLayout, MyLayoutViewModel>({ MyLayoutBinding::class })
 
 class MyLayoutViewModel : ComponentViewModel() {
 
     @Prop
     var myText by state<String?>(null)
 }
+```
+```xml
+// my_layout.xml
+<layout>
+    <data>
+        <variable
+            name="viewModel"
+            type="my.package.MyLayoutViewModel" />
+    </data>
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@{viewModel.myText}" />
+</layout>
 ```
 The annotation processor will generate a class **MyLayoutComponent** inherited from the FrameLayout with the ViewModel and the [binding adapter](https://developer.android.com/topic/libraries/data-binding/binding-adapters) for `myText` attribute, which will pass the value to the ViewModel. As a result, **this class can be used like this:**
 ```xml
@@ -94,7 +108,7 @@ The annotation processor will generate a class **MyLayoutComponent** inherited f
     myText='@{"Hello world!"}' />
 ```
 
-As you can see, the codes for the Fragment and for the View are completely identical.
+As you can see, the codes for the Fragment and for the View are completely identical. You do not need to write View and Fragment classes at all, they are generated automatically.
 
 **The single rule is:** create a class inherited from `ComponentScheme`, specify the super component as the first type argument, ViewModel as the second and mark this class with `MakeComponent` annotation. Then mark with `Prop` annotation those properties that may come from the parent component (the properties must be vars). An argument will be generated for the Fragment, and a binding adapter for the View. Then build the project and use generated classes.
 
@@ -107,7 +121,7 @@ var twoWayText: String? = null //a two-way binding adapter will be generated
 ```
 ### 2. Observable state
 
-Certain properties in the model are declared by the `state` delegate. Each time one of these properties changes, data binding is performed. And this mechanism allows you to **forget about LiveData and ObservableFields.** Now the data for binding can be just vars.
+First you create the `viewModel` variable in your layout.xml. Then you declare certain properties in the ViewModel by the `state` delegate. Each time one of these properties changes, data binding is performed. And this mechanism allows you to **forget about LiveData and ObservableFields.** Now the data for binding can be just vars.
 
 This mechanism optimally distributes the load on the main thread (data binding is placed at the end of the message queue of the main Looper). And if there are many consecutive state changes data binding will only be done once:
 ```kotlin
