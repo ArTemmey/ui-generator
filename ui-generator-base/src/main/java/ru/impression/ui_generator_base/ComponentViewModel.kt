@@ -1,5 +1,7 @@
 package ru.impression.ui_generator_base
 
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -12,10 +14,11 @@ import kotlin.reflect.KProperty
 
 abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
-    var owner: LifecycleOwner? = null
+    internal var owner: LifecycleOwner? = null
 
-    @PublishedApi
-    internal val render = LiveCommand()
+    private val handler = Handler(Looper.getMainLooper())
+
+    internal var onStateChangedListener: (() -> Unit)? = null
 
     @PublishedApi
     internal val sharedProperties =
@@ -24,13 +27,17 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     private val onPropertyChangedListeners =
         HashMap<LifecycleOwner, (property: KMutableProperty<*>, value: Any?) -> Unit>()
 
+
     protected fun <T> state(
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
         object : ObservableImpl<T>(initialValue, onChanged) {
             override fun notifyPropertyChanged(property: KMutableProperty<*>, value: T) {
-                render()
+                onStateChangedListener?.let {
+                    handler.removeCallbacks(it)
+                    handler.post(it)
+                }
                 callOnPropertyChangedListeners(property, value)
             }
         }
@@ -79,6 +86,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
             source.lifecycle.removeObserver(this)
             if (source === owner) {
                 owner = null
+                onStateChangedListener = null
                 onPropertyChangedListeners.keys.forEach { it.lifecycle.removeObserver(this) }
                 onPropertyChangedListeners.clear()
             }

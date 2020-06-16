@@ -12,7 +12,7 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.findFragmentByTag(MainFragmentComponent::class.qualifiedName)
             ?: supportFragmentManager.beginTransaction().replace(
                 R.id.container,
-                MainFragmentComponent().apply { defaultWelcomeText = "Hello world!" },
+                MainFragmentComponent().apply { welcomeText = "Hello world!" },
                 MainFragmentComponent::class.qualifiedName
             ).commit()
     }

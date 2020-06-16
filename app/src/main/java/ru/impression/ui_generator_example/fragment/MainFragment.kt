@@ -21,15 +21,11 @@ class MainFragment :
 
 class MainFragmentViewModel : ComponentViewModel() {
 
-    val welcomeText get() = customWelcomeText ?: defaultWelcomeText
-
     @Prop
-    var defaultWelcomeText by state<String?>(null)
-
-    var customWelcomeText by state<String?>(null)
+    var welcomeText by state<String?>(null)
 
     init {
-        ::customWelcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
+        ::welcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
     }
 
     var welcomeTextVisibility by state(VISIBLE)

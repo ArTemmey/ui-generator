@@ -41,7 +41,7 @@ interface Component<C, VM : ComponentViewModel> {
     }
 
     fun startObservations() {
-        viewModel.render.observe(boundLifecycleOwner, Observer { render() })
+        viewModel.onStateChangedListener = { render() }
         for (viewModelAndProperties in viewModel.sharedProperties) {
             if (viewModelAndProperties.key.findAnnotation<SharedViewModel>() == null) continue
             val sourceViewModel = createViewModel(viewModelAndProperties.key)
