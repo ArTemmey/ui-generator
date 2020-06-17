@@ -1,6 +1,7 @@
 package ru.impression.ui_generator_base
 
 import android.view.View
+import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
@@ -52,7 +53,6 @@ interface Component<C, VM : ComponentViewModel> {
         }
     }
 
-    fun render(immediately: Boolean = true) {
-        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), immediately)
-    }
+    fun render(attachToContainer: Boolean = true): ViewDataBinding? =
+        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), attachToContainer)
 }

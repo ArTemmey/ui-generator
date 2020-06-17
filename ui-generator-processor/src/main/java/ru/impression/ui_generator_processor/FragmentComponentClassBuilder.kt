@@ -80,9 +80,10 @@ class FragmentComponentClassBuilder(
     }
 
     override fun TypeSpec.Builder.addRestMembers() {
+        bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
         addFunction(buildOnCreateViewFunction())
         addFunction(buildOnActivityCreatedFunction())
-        bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
+        addFunction(buildOnDestroyViewFunction())
     }
 
     private fun buildBindableProperty(bindableProperty: BindableProperty) = with(
@@ -109,8 +110,7 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 this.container = container
-                render(false)
-                return renderer.currentBinding?.root
+                return render(false)?.root
                 """.trimIndent()
         )
         build()
@@ -126,6 +126,17 @@ class FragmentComponentClassBuilder(
         """.trimIndent()
         )
         addCode("startObservations()")
+        build()
+    }
+
+    private fun buildOnDestroyViewFunction() = with(FunSpec.builder("onDestroyView")) {
+        addModifiers(KModifier.OVERRIDE)
+        addCode(
+            """
+                super.onDestroyView()
+                renderer.release()
+                """.trimIndent()
+        )
         build()
     }
 }
