@@ -52,7 +52,7 @@ interface Component<C, VM : ComponentViewModel> {
         }
     }
 
-    fun render(attachToContainer: Boolean = true) {
-        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), attachToContainer)
+    fun render(immediately: Boolean = true) {
+        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), immediately)
     }
 }
