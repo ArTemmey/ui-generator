@@ -3,7 +3,6 @@ package ru.impression.ui_generator_base
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import ru.impression.ui_generator_annotations.SharedViewModel
@@ -30,18 +29,17 @@ interface Component<C, VM : ComponentViewModel> {
             is Fragment -> activity
             else -> null
         }
-        val result = when {
+        return when {
             activity != null && viewModelClass.findAnnotation<SharedViewModel>() != null ->
                 ViewModelProvider(activity)[viewModelClass.java]
             activity != null && this is ViewModelStoreOwner ->
                 ViewModelProvider(this)[viewModelClass.java]
             else -> viewModelClass.createInstance()
         }
-        return result.apply { owner = boundLifecycleOwner }
     }
 
     fun startObservations() {
-        viewModel.onStateChangedListener = { render() }
+        viewModel.setOnStateChangedListener(boundLifecycleOwner) { render() }
         for (viewModelAndProperties in viewModel.sharedProperties) {
             if (viewModelAndProperties.key.findAnnotation<SharedViewModel>() == null) continue
             val sourceViewModel = createViewModel(viewModelAndProperties.key)

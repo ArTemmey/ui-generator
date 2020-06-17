@@ -14,11 +14,11 @@ import kotlin.reflect.KProperty
 
 abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
-    internal var owner: LifecycleOwner? = null
+    private var boundLifecycleOwner: LifecycleOwner? = null
 
     private val handler = Handler(Looper.getMainLooper())
 
-    internal var onStateChangedListener: (() -> Unit)? = null
+    private var onStateChangedListener: (() -> Unit)? = null
 
     @PublishedApi
     internal val sharedProperties =
@@ -27,17 +27,13 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     private val onPropertyChangedListeners =
         HashMap<LifecycleOwner, (property: KMutableProperty<*>, value: Any?) -> Unit>()
 
-
     protected fun <T> state(
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
         object : ObservableImpl<T>(initialValue, onChanged) {
             override fun notifyPropertyChanged(property: KMutableProperty<*>, value: T) {
-                onStateChangedListener?.let {
-                    handler.removeCallbacks(it)
-                    handler.post(it)
-                }
+                callOnStateChangedListener()
                 callOnPropertyChangedListeners(property, value)
             }
         }
@@ -68,6 +64,26 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         }
     }
 
+    fun setOnStateChangedListener(owner: LifecycleOwner, listener: () -> Unit) {
+        onStateChangedListener = listener
+        boundLifecycleOwner = owner
+        owner.lifecycle.addObserver(this)
+    }
+
+    private fun callOnStateChangedListener() {
+        onStateChangedListener?.let {
+            handler.removeCallbacks(it)
+            handler.post(it)
+        }
+    }
+
+    private fun removeOnStateChangedListener() {
+        onStateChangedListener?.let { handler.removeCallbacks(it) }
+        onStateChangedListener = null
+        boundLifecycleOwner?.lifecycle?.removeObserver(this)
+        boundLifecycleOwner = null
+    }
+
     fun addOnPropertyChangedListener(
         owner: LifecycleOwner,
         listener: (property: KProperty<*>, value: Any?) -> Unit
@@ -80,18 +96,26 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         onPropertyChangedListeners.values.forEach { it(property, value) }
     }
 
+    private fun removeOnPropertyChangedListener(owner: LifecycleOwner) {
+        onPropertyChangedListeners.remove(owner)
+        owner.lifecycle.removeObserver(this)
+    }
+
+    private fun clearOnPropertyChangedListeners() {
+        onPropertyChangedListeners.keys.forEach { it.lifecycle.removeObserver(this) }
+        onPropertyChangedListeners.clear()
+    }
+
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
-            onPropertyChangedListeners.remove(source)
-            source.lifecycle.removeObserver(this)
-            if (source === owner) {
-                owner = null
-                onStateChangedListener = null
-                onPropertyChangedListeners.keys.forEach { it.lifecycle.removeObserver(this) }
-                onPropertyChangedListeners.clear()
+            if (source === boundLifecycleOwner) {
+                removeOnStateChangedListener()
+                clearOnPropertyChangedListeners()
+            } else {
+                removeOnPropertyChangedListener(source)
             }
         }
-        if (source === owner) onLifecycleEvent(event)
+        if (source === boundLifecycleOwner) onLifecycleEvent(event)
     }
 
     open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
