@@ -4,7 +4,6 @@ package ru.impression.ui_generator_example.view
 
 import android.annotation.SuppressLint
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.databinding.adapters.TextViewBindingAdapter
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
@@ -16,8 +15,6 @@ import ru.impression.ui_generator_example.translateRight
 
 @MakeComponent
 class AnimatedText : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({ viewModel ->
-    // Use binding adapters as they are safe if you re-set the same value
-    TextViewBindingAdapter.setText(this, viewModel.text)
     viewModel.animation?.let {
         clearAnimation()
         when (it) {
@@ -33,8 +30,6 @@ class AnimatedText : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({
 }
 
 class AnimatedTextViewModel : ComponentViewModel() {
-
-    val text = "Animated text"
 
     @Prop(twoWay = true)
     var animation by state<AnimatedText.Animation?>(null)

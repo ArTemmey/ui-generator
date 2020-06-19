@@ -31,6 +31,7 @@
             android:layout_height="wrap_content" />
 
         <ru.impression.ui_generator_example.view.AnimatedTextComponent
+            android:text="Animated text"
             animation="@={viewModel.textAnimation}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -48,7 +48,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
             }
         }
 
-    protected inline fun <reified VM : ComponentViewModel, T> KProperty<*>.isMutableBy(
+    protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
         vararg properties: KMutableProperty1<VM, T>
     ) {
         val map = sharedProperties[VM::class]
