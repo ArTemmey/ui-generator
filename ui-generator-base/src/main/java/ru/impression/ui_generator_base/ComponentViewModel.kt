@@ -29,11 +29,12 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     protected fun <T> state(
         initialValue: T,
+        immediatelyBindChanges: Boolean = false,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
         object : ObservableImpl<T>(initialValue, onChanged) {
             override fun notifyPropertyChanged(property: KMutableProperty<*>, value: T) {
-                callOnStateChangedListener()
+                callOnStateChangedListener(immediatelyBindChanges)
                 callOnPropertyChangedListeners(property, value)
             }
         }
@@ -70,10 +71,10 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         owner.lifecycle.addObserver(this)
     }
 
-    private fun callOnStateChangedListener() {
+    private fun callOnStateChangedListener(immediately: Boolean) {
         onStateChangedListener?.let {
             handler.removeCallbacks(it)
-            handler.post(it)
+            if (immediately) it() else handler.post(it)
         }
     }
 
