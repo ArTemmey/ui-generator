@@ -28,28 +28,31 @@ val View.activity: AppCompatActivity?
         return contextWrapper
     }
 
-fun KClass<out ViewDataBinding>.inflate(
-    container: ViewGroup,
-    viewModel: ComponentViewModel,
-    lifecycleOwner: LifecycleOwner,
+internal fun KClass<out ViewDataBinding>.inflate(
+    component: Component<*, *>,
     attachToRoot: Boolean
-) = (java.getMethod(
-    "inflate",
-    LayoutInflater::class.java,
-    ViewGroup::class.java,
-    Boolean::class.javaPrimitiveType
-).invoke(
-    null,
-    LayoutInflater.from(container.context),
-    container,
-    attachToRoot
-) as ViewDataBinding).apply {
-    this.lifecycleOwner = lifecycleOwner
-    setViewModel(viewModel)
+) = (component.container as? ViewGroup)?.let {
+    (java.getMethod(
+        "inflate",
+        LayoutInflater::class.java,
+        ViewGroup::class.java,
+        Boolean::class.javaPrimitiveType
+    ).invoke(null, LayoutInflater.from(it.context), it, attachToRoot) as ViewDataBinding).apply {
+        this.lifecycleOwner = component.boundLifecycleOwner
+        setComponent(component)
+        setViewModel(component.viewModel)
+    }
+} ?: throw UnsupportedOperationException("Component must be ViewGroup")
+
+internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
+    this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
 }
 
-fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
-    this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
+internal fun ViewDataBinding.setComponent(component: Component<*, *>) {
+    try {
+        this::class.java.getMethod("setComponent", component::class.java).invoke(this, component)
+    } catch (e: NoSuchMethodException) {
+    }
 }
 
 fun KProperty<*>.get(receiver: Any?) =

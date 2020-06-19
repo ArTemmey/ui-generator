@@ -13,7 +13,7 @@ import androidx.core.view.marginStart
 import androidx.core.view.marginTop
 import androidx.databinding.adapters.TextViewBindingAdapter
 
-fun TextView.bindText(text: CharSequence) = TextViewBindingAdapter.setText(this, text)
+fun TextView.bindText(text: CharSequence?) = TextViewBindingAdapter.setText(this, text)
 
 fun View.dp(value: Int) = value * context.resources.displayMetrics.density
 

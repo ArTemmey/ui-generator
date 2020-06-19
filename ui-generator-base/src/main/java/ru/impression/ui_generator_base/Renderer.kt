@@ -12,23 +12,18 @@ class Renderer(private val component: Component<*, *>) {
 
     fun render(
         newBindingClass: KClass<out ViewDataBinding>?,
-        immediately: Boolean
+        attachToContainer: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newBindingClass != null && newBindingClass == currentBindingClass) {
                 it.setViewModel(component.viewModel)
-                if (immediately) it.executePendingBindings()
+                it.executePendingBindings()
                 return it
             }
             (component.container as? ViewGroup)?.removeAllViews()
         }
-        currentBinding = newBindingClass?.inflate(
-            component.container as? ViewGroup
-                ?: throw UnsupportedOperationException("Component must be ViewGroup"),
-            component.viewModel,
-            component.boundLifecycleOwner,
-            immediately
-        )?.apply { if (immediately) executePendingBindings() }
+        currentBinding = newBindingClass?.inflate(component, attachToContainer)
+            ?.apply { executePendingBindings() }
         currentBindingClass = newBindingClass
         return currentBinding
     }

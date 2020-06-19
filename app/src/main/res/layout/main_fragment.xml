@@ -6,6 +6,10 @@
         <variable
             name="viewModel"
             type="ru.impression.ui_generator_example.fragment.MainFragmentViewModel" />
+
+        <variable
+            name="component"
+            type="ru.impression.ui_generator_example.fragment.MainFragmentComponent" />
     </data>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -31,11 +35,11 @@
             android:layout_height="wrap_content" />
 
         <ru.impression.ui_generator_example.view.AnimatedTextComponent
-            android:text="Animated text"
             animation="@={viewModel.textAnimation}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp" />
+            android:layout_marginTop="32dp"
+            android:text="Animated text" />
 
         <Button
             android:layout_width="wrap_content"
