@@ -115,7 +115,22 @@ class ViewComponentClassBuilder(
         }
 
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
-        addStatement(
+        var addedObtainAttrsBlock = false
+        for (property in bindableProperties) {
+            if (property.attr == 0) continue
+            if (!addedObtainAttrsBlock)
+                add("with(context.theme.obtainStyledAttributes(attrs, R.styleable.TopBar, 0, 0)) {")
+            when(property.type.toString()) {
+
+            }
+            add(
+                """
+                    
+                    
+                """.trimIndent()
+            )
+        }
+        add(
             """
                 render()
                 startObservations()

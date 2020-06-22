@@ -36,6 +36,7 @@ abstract class ComponentClassBuilder(
                         propertyName,
                         capitalizedPropertyName,
                         propertyType,
+                        annotation.attr,
                         annotation.twoWay,
                         "${propertyName}AttrChanged"
                     )
@@ -89,6 +90,7 @@ abstract class ComponentClassBuilder(
         val name: String,
         val capitalizedName: String,
         val type: TypeMirror,
+        val attr: Int,
         val twoWay: Boolean,
         val attrChangedPropertyName: String
     )

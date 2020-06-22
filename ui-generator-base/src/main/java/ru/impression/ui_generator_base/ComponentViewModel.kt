@@ -12,7 +12,7 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 
-abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
+abstract class ComponentViewModel(val styleable: Int? = null) : ViewModel(), LifecycleEventObserver {
 
     private var boundLifecycleOwner: LifecycleOwner? = null
 
