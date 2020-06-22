@@ -26,7 +26,8 @@ fun View.updateLayoutParams(
     marginBottom: Int? = null
 ) {
     layoutParams?.let {
-        if (width != null && it.width == width
+        if ((width == null || width == it.width)
+            && (height == null || height == it.height)
             && (marginStart == null || marginStart == this.marginStart)
             && (marginTop == null || marginTop == this.marginTop)
             && (marginEnd == null || marginEnd == this.marginEnd)
