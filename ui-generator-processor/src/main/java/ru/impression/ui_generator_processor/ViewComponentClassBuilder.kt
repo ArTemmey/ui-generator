@@ -223,7 +223,7 @@ class ViewComponentClassBuilder(
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", bindableProperty.name).build()
+                ).addMember("%S", "app:${bindableProperty.name}").build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
@@ -250,7 +250,7 @@ class ViewComponentClassBuilder(
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", bindableProperty.attrChangedPropertyName).build()
+                ).addMember("%S", "app:${bindableProperty.attrChangedPropertyName}").build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter(
@@ -267,7 +267,7 @@ class ViewComponentClassBuilder(
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "InverseBindingAdapter")
-                ).addMember("attribute = %S", bindableProperty.name).build()
+                ).addMember("attribute = %S", "app:${bindableProperty.name}").build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             returns(bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
