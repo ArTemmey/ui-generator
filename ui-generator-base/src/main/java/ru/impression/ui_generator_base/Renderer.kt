@@ -12,18 +12,18 @@ class Renderer(private val component: Component<*, *>) {
 
     fun render(
         newBindingClass: KClass<out ViewDataBinding>?,
-        attachToContainer: Boolean
+        immediately: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newBindingClass != null && newBindingClass == currentBindingClass) {
                 it.setViewModel(component.viewModel)
-                it.executePendingBindings()
+                if (immediately) it.executePendingBindings()
                 return it
             }
             (component.container as? ViewGroup)?.removeAllViews()
         }
-        currentBinding = newBindingClass?.inflate(component, attachToContainer)
-            ?.apply { executePendingBindings() }
+        currentBinding = newBindingClass?.inflate(component, immediately)
+            ?.apply { if (immediately) executePendingBindings() }
         currentBindingClass = newBindingClass
         return currentBinding
     }

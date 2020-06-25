@@ -18,7 +18,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var onStateChangedListener: (() -> Unit)? = null
+    private var onStateChangedListener: Runnable? = null
 
     @PublishedApi
     internal val sharedProperties =
@@ -65,7 +65,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         }
     }
 
-    fun setOnStateChangedListener(owner: LifecycleOwner, listener: () -> Unit) {
+    fun setOnStateChangedListener(owner: LifecycleOwner, listener: Runnable) {
         onStateChangedListener = listener
         boundLifecycleOwner = owner
         owner.lifecycle.addObserver(this)
@@ -74,7 +74,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     private fun callOnStateChangedListener(immediately: Boolean) {
         onStateChangedListener?.let {
             handler.removeCallbacks(it)
-            if (immediately) it() else handler.post(it)
+            if (immediately) it.run() else handler.post(it)
         }
     }
 

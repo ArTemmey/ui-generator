@@ -40,7 +40,7 @@ interface Component<C, VM : ComponentViewModel> {
     }
 
     fun startObservations() {
-        viewModel.setOnStateChangedListener(boundLifecycleOwner) { render() }
+        viewModel.setOnStateChangedListener(boundLifecycleOwner, Runnable { render() })
         for (viewModelAndProperties in viewModel.sharedProperties) {
             if (viewModelAndProperties.key.findAnnotation<SharedViewModel>() == null) continue
             val sourceViewModel = createViewModel(viewModelAndProperties.key)
@@ -53,6 +53,6 @@ interface Component<C, VM : ComponentViewModel> {
         }
     }
 
-    fun render(attachToContainer: Boolean = true): ViewDataBinding? =
-        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), attachToContainer)
+    fun render(immediately: Boolean = true): ViewDataBinding? =
+        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), immediately)
 }
