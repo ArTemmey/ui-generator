@@ -134,8 +134,8 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
             this.value = value
-            onChanged?.invoke(value)
             notifyPropertyChanged(property as KMutableProperty<*>, value)
+            onChanged?.invoke(value)
         }
 
         abstract fun notifyPropertyChanged(property: KMutableProperty<*>, value: T)

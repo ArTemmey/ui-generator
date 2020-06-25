@@ -157,6 +157,15 @@ class MyButton : ComponentScheme<Button, MyButtonViewModel>({ viewModel ->
 })
 ```
 
+To bind data to a super component, you can use the functions located in `ru.impression.ui_generator_base.Binders.kt`. All of them are executed only if the new value is different from the set value. Example of the function `updateLayoutParams`:
+```kotlin
+@MakeComponent
+class MyTextView : ComponentScheme<TextView, MyTextViewModel>({
+    updateLayoutParams(width = MATCH_PARENT, height = WRAP_CONTENT, marginTop = 16)
+    null
+})
+```
+
 ### 4. Shared state
 
 Suppose you need to observe in one ViewModel changes of the property of another ViewModel. Here's how you do it:
