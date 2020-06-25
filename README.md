@@ -119,6 +119,21 @@ Also, in the case of a View, you can set `Prop.twoWay = true`, and then a two-wa
 @Prop(twoWay = true)
 var twoWayText: String? = null //a two-way binding adapter will be generated
 ```
+
+And in the case of Fragments, you can pass callbacks to them:
+```kotlin
+// SomeFragmentViewModel.kt
+@Prop
+var callback: (() -> Unit)? = null // this callback will live as long as SomeFragmentViewModel
+
+// SomeFragment's parent Fragment
+showFragment(SomeFragmentComponent().apply { callback = viewModel.childFragmentCallback })
+
+// ViewModel of SomeFragment's parent Fragment
+val childFragmentCallback = { print("Child Fragment callback invoked!") }
+```
+But keep in mind that the source value of the callback must be in the ViewModel  so that the callback does not refer to a Fragment or View.
+
 ### 2. Observable state
 
 First you create the `viewModel` variable in your layout.xml. Then you declare certain properties in the ViewModel by the `state` delegate. Each time one of these properties changes, data binding is performed. And this mechanism allows you to **forget about LiveData and ObservableFields.** Now the data for binding can be just vars.
