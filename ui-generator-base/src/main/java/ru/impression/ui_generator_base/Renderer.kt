@@ -12,7 +12,8 @@ class Renderer(private val component: Component<*, *>) {
 
     fun render(
         newBindingClass: KClass<out ViewDataBinding>?,
-        immediately: Boolean
+        immediately: Boolean,
+        attachToContainer: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newBindingClass != null && newBindingClass == currentBindingClass) {
@@ -22,7 +23,7 @@ class Renderer(private val component: Component<*, *>) {
             }
             (component.container as? ViewGroup)?.removeAllViews()
         }
-        currentBinding = newBindingClass?.inflate(component, immediately)
+        currentBinding = newBindingClass?.inflate(component, attachToContainer)
             ?.apply { if (immediately) executePendingBindings() }
         currentBindingClass = newBindingClass
         return currentBinding

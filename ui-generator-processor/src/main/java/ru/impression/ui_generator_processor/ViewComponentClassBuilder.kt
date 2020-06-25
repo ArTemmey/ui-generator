@@ -117,7 +117,7 @@ class ViewComponentClassBuilder(
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
         addStatement(
             """
-                render()
+                render(false)
                 startObservations()
                 viewTreeObserver.addOnGlobalLayoutListener {
                   if (lifecycleRegistry.currentState != Lifecycle.State.RESUMED)

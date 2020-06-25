@@ -98,7 +98,7 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 this.container = container
-                return render(false)?.root
+                return render(false, false)?.root
                 """.trimIndent()
         )
         build()

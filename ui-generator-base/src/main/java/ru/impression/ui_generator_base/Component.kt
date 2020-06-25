@@ -53,6 +53,6 @@ interface Component<C, VM : ComponentViewModel> {
         }
     }
 
-    fun render(immediately: Boolean = true): ViewDataBinding? =
-        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), immediately)
+    fun render(immediately: Boolean = true, attachToContainer: Boolean = true): ViewDataBinding? =
+        renderer.render(scheme.getBindingClass?.invoke(this as C, viewModel), immediately, attachToContainer)
 }
