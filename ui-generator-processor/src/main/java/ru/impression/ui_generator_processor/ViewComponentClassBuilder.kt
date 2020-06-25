@@ -230,15 +230,8 @@ class ViewComponentClassBuilder(
             addCode(
                 """
                     if (value == view.viewModel.${bindableProperty.name}) return
-                    val property = view.viewModel::${bindableProperty.name} as %T
-                    if (property.returnType.isMarkedNullable)
-                      property.%M(view.viewModel, value)
-                    else
-                      property.%M(view.viewModel, value ?: return)
+                    view.viewModel::${bindableProperty.name}.%M(view.viewModel, value)
                 """.trimIndent(),
-                ClassName("kotlin.reflect", "KMutableProperty")
-                    .parameterizedBy(STAR),
-                MemberName("ru.impression.ui_generator_base", "set"),
                 MemberName("ru.impression.ui_generator_base", "set")
             )
             build()

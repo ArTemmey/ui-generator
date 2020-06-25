@@ -34,18 +34,10 @@ class FragmentComponentClassBuilder(
                     bindableProperties.forEach {
                         add(
                             """
-                                if (${it.name} != viewModel.${it.name}) {
-                                val viewModel${it.capitalizedName} = viewModel::${it.name} as %T
-                                if (viewModel${it.capitalizedName}.returnType.isMarkedNullable)
-                                  viewModel${it.capitalizedName}.%M(viewModel, ${it.name})
-                                else
-                                  ${it.name}?.let { viewModel${it.capitalizedName}.%M(viewModel, it) }
-                                }
-                    
-                    """.trimIndent(),
-                            ClassName("kotlin.reflect", "KMutableProperty")
-                                .parameterizedBy(STAR),
-                            MemberName("ru.impression.ui_generator_base", "set"),
+                                if (${it.name} != null && ${it.name} != viewModel.${it.name})
+                                  viewModel::${it.name}.%M(viewModel, ${it.name})
+                                  
+                                  """.trimIndent(),
                             MemberName("ru.impression.ui_generator_base", "set")
                         )
                     }
@@ -93,11 +85,7 @@ class FragmentComponentClassBuilder(
         )
     ) {
         mutable(true)
-        delegate(
-            "%M(%S)",
-            MemberName("ru.impression.ui_generator_base", "argument"),
-            bindableProperty.name
-        )
+        initializer("null")
         build()
     }
 
