@@ -31,18 +31,23 @@ val View.activity: AppCompatActivity?
 internal fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
     attachToRoot: Boolean
-) = (component.container as? ViewGroup)?.let {
+) = (component.container as? ViewGroup).let {
     (java.getMethod(
         "inflate",
         LayoutInflater::class.java,
         ViewGroup::class.java,
         Boolean::class.javaPrimitiveType
-    ).invoke(null, LayoutInflater.from(it.context), it, attachToRoot) as ViewDataBinding).apply {
+    ).invoke(
+        null,
+        LayoutInflater.from((component as? Fragment)?.context ?: (component as? View)?.context),
+        it,
+        attachToRoot
+    ) as ViewDataBinding).apply {
         this.lifecycleOwner = component.boundLifecycleOwner
         setComponent(component)
         setViewModel(component.viewModel)
     }
-} ?: throw UnsupportedOperationException("Component must be ViewGroup")
+}
 
 internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
     this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
