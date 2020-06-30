@@ -151,13 +151,14 @@ class ViewComponentClassBuilder(
             """.trimIndent()
             )
             bindableProperties.forEach {
-                addCode(
-                    """
+                if (it.twoWay)
+                    addCode(
+                        """
                         
                               %S -> ${it.name}AttrChanged?.onChange()
-                    """.trimIndent(),
-                    it.name
-                )
+                              """.trimIndent(),
+                        it.name
+                    )
             }
             addCode(
                 """
