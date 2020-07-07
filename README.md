@@ -124,7 +124,7 @@ And in the case of Fragments, you can pass callbacks to them:
 ```kotlin
 // SomeFragmentViewModel.kt
 @Prop
-var callback: (() -> Unit)? = null // this callback will live as long as SomeFragmentViewModel
+var callback: (() -> Unit)? = null
 
 // SomeFragment's parent Fragment
 showFragment(SomeFragmentComponent().apply { callback = viewModel.childFragmentCallback })

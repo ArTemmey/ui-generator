@@ -2,6 +2,7 @@ package ru.impression.ui_generator_base
 
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.CallSuper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -19,6 +20,8 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     private val handler = Handler(Looper.getMainLooper())
 
     private var onStateChangedListener: Runnable? = null
+
+    private val onClearedListeners = HashSet<() -> Unit>()
 
     @PublishedApi
     internal val sharedProperties =
@@ -38,6 +41,11 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
                 callOnPropertyChangedListeners(property, value)
             }
         }
+
+    @CallSuper
+    open fun onStateChanged() {
+        callOnStateChangedListener(false)
+    }
 
     protected fun <T> observable(
         initialValue: T,
@@ -107,11 +115,12 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         onPropertyChangedListeners.clear()
     }
 
-    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+    final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             if (source === boundLifecycleOwner) {
                 removeOnStateChangedListener()
                 clearOnPropertyChangedListeners()
+                onClearedListeners.forEach { it() }
             } else {
                 removeOnPropertyChangedListener(source)
             }
@@ -121,6 +130,14 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
 
+    fun addOnClearedListener(listener: () -> Unit) {
+        onClearedListeners.add(listener)
+    }
+
+    fun removeOnClearedListener(listener: () -> Unit) {
+        onClearedListeners.remove(listener)
+    }
+
     public override fun onCleared() = Unit
 
     internal abstract class ObservableImpl<T>(
@@ -128,14 +145,18 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         private val onChanged: ((T) -> Unit)? = null
     ) : ReadWriteProperty<ComponentViewModel, T> {
 
+        @Volatile
         private var value = initialValue
 
-        override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) = value
+        override fun getValue(thisRef: ComponentViewModel, property: KProperty<*>) =
+            synchronized(this) { value }
 
         override fun setValue(thisRef: ComponentViewModel, property: KProperty<*>, value: T) {
-            this.value = value
-            notifyPropertyChanged(property as KMutableProperty<*>, value)
-            onChanged?.invoke(value)
+            synchronized(this) {
+                this.value = value
+                notifyPropertyChanged(property as KMutableProperty<*>, value)
+                onChanged?.invoke(value)
+            }
         }
 
         abstract fun notifyPropertyChanged(property: KMutableProperty<*>, value: T)
