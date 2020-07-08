@@ -119,12 +119,7 @@ class ViewComponentClassBuilder(
             """
                 render(false)
                 startObservations()
-                viewTreeObserver.addOnGlobalLayoutListener {
-                  if (lifecycleRegistry.currentState != Lifecycle.State.RESUMED)
-                    lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_RESUME)
-                }
-                """.trimIndent(),
-            ClassName("androidx.lifecycle", "Lifecycle")
+                """.trimIndent()
         )
         build()
     }
@@ -176,13 +171,11 @@ class ViewComponentClassBuilder(
             """
                 super.onAttachedToWindow()
                 lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_CREATE)
-                lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_START)
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
                   startObservations()
                 }
                 """.trimIndent(),
-            ClassName("androidx.lifecycle", "Lifecycle"),
             ClassName("androidx.lifecycle", "Lifecycle")
         )
         build()
@@ -194,14 +187,10 @@ class ViewComponentClassBuilder(
             addCode(
                 """
                     super.onDetachedFromWindow()
-                    lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_PAUSE)
-                    lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_STOP)
                     lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
                     viewModel.onCleared()
                     isDetachedFromWindow = true
                     """.trimIndent(),
-                ClassName("androidx.lifecycle", "Lifecycle"),
-                ClassName("androidx.lifecycle", "Lifecycle"),
                 ClassName("androidx.lifecycle", "Lifecycle")
             )
             build()
