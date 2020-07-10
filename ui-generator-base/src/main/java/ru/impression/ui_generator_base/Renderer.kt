@@ -10,7 +10,7 @@ class Renderer(private val component: Component<*, *>) {
 
     private var currentBindingClass: KClass<out ViewDataBinding>? = null
 
-    fun render(
+    internal fun render(
         newBindingClass: KClass<out ViewDataBinding>?,
         immediately: Boolean,
         attachToContainer: Boolean
