@@ -19,15 +19,27 @@ open class ObservableImpl<R, T>(
     val viewModel = parent as? ComponentViewModel
 
     @Volatile
+    var property: KMutableProperty<*>? = null
+
+    @Volatile
     var value = initialValue
 
     @Synchronized
-    override fun getValue(thisRef: R, property: KProperty<*>): T = value
+    override fun getValue(thisRef: R, property: KProperty<*>): T {
+        this.property ?: run { this.property = property as? KMutableProperty<*> }
+        return value
+    }
 
     @Synchronized
     override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
+        this.property ?: run { this.property = property as? KMutableProperty<*> }
         this.value = value
+        notifyListeners(value)
+    }
+
+    open fun notifyListeners(value: T) {
         immediatelyBindChanges?.let { viewModel?.onStateChanged(it) }
+        property?.let { viewModel?.callOnPropertyChangedListeners(it, value) }
         viewModel?.callOnPropertyChangedListeners(property as KMutableProperty<*>, value)
         onChanged?.invoke(value)
     }
