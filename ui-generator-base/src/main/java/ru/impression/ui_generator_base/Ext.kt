@@ -33,7 +33,7 @@ internal fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
     attachToRoot: Boolean
 ) = (component.container as? ViewGroup).let {
-    (java.getMethod(
+    (java.getDeclaredMethod(
         "inflate",
         LayoutInflater::class.java,
         ViewGroup::class.java,
@@ -51,14 +51,17 @@ internal fun KClass<out ViewDataBinding>.inflate(
 }
 
 internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
-    this::class.java.getMethod("setViewModel", viewModel::class.java).invoke(this, viewModel)
+    this::class.java.getDeclaredMethod("setViewModel", viewModel::class.java)
+        .invoke(this, viewModel)
 }
 
 internal fun ViewDataBinding.setComponent(component: Component<*, *>) {
-    try {
-        this::class.java.getMethod("setComponent", component::class.java).invoke(this, component)
-    } catch (e: NoSuchMethodException) {
-    }
+    this::class.java.declaredMethods.firstOrNull {
+        val parameterTypes = it.parameterTypes
+        it.name == "setComponent"
+                && parameterTypes.size == 1
+                && parameterTypes[0].isAssignableFrom(component::class.java)
+    }?.invoke(this, component)
 }
 
 fun KProperty<*>.get(receiver: Any?) =
