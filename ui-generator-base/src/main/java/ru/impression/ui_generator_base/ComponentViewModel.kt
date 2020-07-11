@@ -48,6 +48,11 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     ): ReadWriteProperty<ComponentViewModel, T> =
         ObservableImpl(this, initialValue, null, onChanged)
 
+    @CallSuper
+    open fun onPropertyChanged(property: KMutableProperty<*>, value: Any?) {
+        callOnPropertyChangedListeners(property, value)
+    }
+
     protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
         vararg properties: KMutableProperty1<VM, T>
     ) {
@@ -129,7 +134,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
 
     public override fun onCleared() = Unit
 
-    open class ObservableImpl<T>(
+    internal open class ObservableImpl<T>(
         private val parent: ComponentViewModel,
         initialValue: T,
         private val immediatelyBindChanges: Boolean?,
