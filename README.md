@@ -122,15 +122,12 @@ var twoWayText: String? = null //a two-way binding adapter will be generated
 
 And in the case of Fragments, you can pass callbacks to them:
 ```kotlin
-// SomeFragmentViewModel.kt
+// ChildFragmentViewModel.kt
 @Prop
 var callback: (() -> Unit)? = null
 
-// SomeFragment's parent Fragment
-showFragment(SomeFragmentComponent().apply { callback = viewModel.childFragmentCallback })
-
-// ViewModel of SomeFragment's parent Fragment
-val childFragmentCallback = { print("Child Fragment callback invoked!") }
+// ChildFragment's parent Fragment
+showFragment(ChildFragmentComponent().apply { callback = this@ParentFragment.viewModel.childFragmentCallback })
 ```
 But keep in mind that the source value of the callback must be in the ViewModel  so that the callback does not refer to a Fragment or View.
 
