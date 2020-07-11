@@ -15,13 +15,13 @@ abstract class CoroutineViewModel : ComponentViewModel(),
         immediatelyBindChanges: Boolean = false,
         onChanged: ((T?) -> Unit)? = null
     ): ReadWriteProperty<CoroutineViewModel, T?> =
-        CoroutineObservableImpl(this, initialValue, immediatelyBindChanges, onChanged)
+        ObservableImpl(this, null, initialValue, immediatelyBindChanges, onChanged)
 
     protected fun <T> observable(
         initialValue: Deferred<T>,
         onChanged: ((T?) -> Unit)? = null
     ): ReadWriteProperty<CoroutineViewModel, T?> =
-        CoroutineObservableImpl(this, initialValue, null, onChanged)
+        ObservableImpl(this, null, initialValue, null, onChanged)
 
 
     @CallSuper

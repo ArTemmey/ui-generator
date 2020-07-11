@@ -82,5 +82,5 @@ fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
 val KMutableProperty0<*>.isInitializing: Boolean
     get() {
         isAccessible = true
-        return (getDelegate() as? CoroutineObservableImpl<*, *>)?.isInitializing == true
+        return (getDelegate() as? ObservableImpl<*, *>)?.isInitializing == true
     }

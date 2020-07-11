@@ -9,20 +9,38 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.isAccessible
 
-open class ObservableImpl<R, T>(
+open class ObservableImpl<R : Any, T>(
     parent: R,
     initialValue: T,
+    initialValueDeferred: Deferred<T>?,
     private val immediatelyBindChanges: Boolean?,
     private val onChanged: ((T) -> Unit)?
 ) : ReadWriteProperty<R, T> {
 
-    val viewModel = parent as? ComponentViewModel
+    open val viewModel = parent as? ComponentViewModel
 
     @Volatile
     var property: KMutableProperty<*>? = null
 
     @Volatile
     var value = initialValue
+
+    @Volatile
+    var isInitializing = initialValueDeferred != null
+
+    init {
+        initialValueDeferred?.let { deferred ->
+            (parent as? CoroutineScope)?.launch {
+                val result = deferred.await()
+                isInitializing = false
+                (parent::class.members.firstOrNull {
+                    it.isAccessible = true
+                    it is KMutableProperty1<*, *> && (it as KMutableProperty1<R, *>)
+                        .getDelegate(parent) === this@ObservableImpl
+                } as KMutableProperty1<R, T>?)?.set(parent, result)
+            }
+        }
+    }
 
     @Synchronized
     override fun getValue(thisRef: R, property: KProperty<*>): T {
@@ -42,30 +60,5 @@ open class ObservableImpl<R, T>(
         property?.let { viewModel?.callOnPropertyChangedListeners(it, value) }
         viewModel?.callOnPropertyChangedListeners(property as KMutableProperty<*>, value)
         onChanged?.invoke(value)
-    }
-}
-
-open class CoroutineObservableImpl<R : CoroutineScope, T>(
-    parent: R,
-    initialValue: Deferred<T>,
-    immediatelyBindChanges: Boolean?,
-    onChanged: ((T?) -> Unit)?
-) : ObservableImpl<R, T?>(parent, null, immediatelyBindChanges, onChanged) {
-
-    @Volatile
-    open var isInitializing = true
-
-    init {
-        parent.launch {
-            val result = initialValue.await()
-            (parent::class.members.firstOrNull {
-                it.isAccessible = true
-                it is KMutableProperty1<*, *> && (it as KMutableProperty1<R, *>)
-                    .getDelegate(parent) === this@CoroutineObservableImpl
-            } as KMutableProperty1<CoroutineViewModel, T>?)
-                ?.set(parent, result)
-            isInitializing = false
-            immediatelyBindChanges?.let { viewModel?.onStateChanged(it) }
-        }
     }
 }

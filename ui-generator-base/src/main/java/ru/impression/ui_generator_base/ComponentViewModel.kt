@@ -35,7 +35,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         immediatelyBindChanges: Boolean = false,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
-        ObservableImpl(this, initialValue, immediatelyBindChanges, onChanged)
+        ObservableImpl(this, initialValue, null, immediatelyBindChanges, onChanged)
 
     @CallSuper
     open fun onStateChanged(immediatelyBindChanges: Boolean = false) {
@@ -46,7 +46,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
-        ObservableImpl(this, initialValue, null, onChanged)
+        ObservableImpl(this, initialValue, null, null, onChanged)
 
     protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
         vararg properties: KMutableProperty1<VM, T>
