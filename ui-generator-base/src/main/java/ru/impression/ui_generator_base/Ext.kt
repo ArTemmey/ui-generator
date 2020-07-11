@@ -17,6 +17,7 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.*
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.jvm.isAccessible
 
 val View.activity: AppCompatActivity?
     get() {
@@ -74,3 +75,9 @@ fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
         is KMutableProperty1<*, *> -> (this as KMutableProperty1<Any?, Any?>).set(receiver, value)
     }
 }
+
+val KMutableProperty0<*>.isInitializing: Boolean
+    get() {
+        isAccessible = true
+        return (getDelegate() as? CoroutineViewModel.CoroutineObservableImpl<*>)?.isInitializing == true
+    }

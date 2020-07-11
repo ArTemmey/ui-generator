@@ -1,7 +1,7 @@
 **UI-generator is a framework that allows you to intuitively and quickly create UI** using the principle of reusable components. This principle is the most modern and effective in the field of UI development, and it underlies such frameworks as React and Flutter.
 
 ---
-**UI-generator is similar in functionality to [Jetpack Compose](https://developer.android.com/jetpack/compose)** and provides all its main features. But unlike the Jetpack Compose, UI-generator is fully compatible with the components of the Android support library - Fragments and Views, so you do not have to rewrite all your code to implement this framework. UI-generator works on annotation processing and generates code on top of Fragment and View classes.
+**UI-generator is similar in functionality to [Jetpack Compose](https://developer.android.com/jetpack/compose)** and provides all its main features. But unlike the Jetpack Compose, UI-generator is fully available now and is compatible with the components of the Android support library - Fragments and Views, so you do not have to rewrite all your code to implement this framework. UI-generator works on annotation processing and generates code on top of Fragment and View classes.
 
 ## Installation
 
@@ -148,6 +148,8 @@ property3 = true
 
 Data binding is performed at one time for all Views by replacing the old bound ViewModel with a new one. And this does not make the binding algorithm more complicated than using LiveData and ObservableFields, since all native data binding adapters and generated ones are not executed if the new value is equal to the old one.
 
+You can manually initiate data binding by calling `onStateChanged` function in ViewModel.
+
 **Note:** two-way data binding also works - changes in the view will change your state property
 
 ### 3. Functional rendering
@@ -199,5 +201,28 @@ class MyPlainViewModel : ComponentViewModel() {
 }
 ```
 A ViewModel with a shared property is marked with `SharedViewModel` annotation, and the shared property is declared by the `observable` or `state` delegate. Then, in the observing ViewModel, in the initial block, using `isMutableBy` method, it is indicated which property values will be duplicated to your property (your property must be a var).
+
+### 5. Coroutine support
+
+Suppose that before you display some data, you need to load it first. Here's how you do it:
+```kotlin
+var greeting: String? by state(async {
+    delay(2000)
+    "Hello world!"
+})
+```
+All you need to do is inherit your model from `CoroutineViewModel`. It implements `CoroutineScope` in which your `async` block is executed. You can also execute all your other coroutines in this scope. Scope is canceled when `onCleared` is called.
+
+You can also observe the loading state of your data. For example, in order to show the progress bar during loading:
+```xml
+<ProgressBar
+    isVisible="@{viewModel.greetingIsInitializing}"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+```
+```kotlin
+// After `isInitializing` becomes `false`, the data binding will be called and the ProgressBar will be hidden.
+val greetingIsInitializing: Boolean get() = ::greeting.isInitializing
+```
 
 ***For detailed examples see module `app`.***

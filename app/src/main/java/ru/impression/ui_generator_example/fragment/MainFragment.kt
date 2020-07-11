@@ -1,14 +1,14 @@
 package ru.impression.ui_generator_example.fragment
 
-import android.view.View.INVISIBLE
-import android.view.View.VISIBLE
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
-import ru.impression.ui_generator_base.ComponentViewModel
-import ru.impression.ui_generator_example.context
+import ru.impression.ui_generator_base.CoroutineViewModel
+import ru.impression.ui_generator_base.isInitializing
 import ru.impression.ui_generator_example.databinding.MainFragmentBinding
 import ru.impression.ui_generator_example.view.AnimatedText
 import ru.impression.ui_generator_example.view.TextEditorViewModel
@@ -17,9 +17,15 @@ import kotlin.random.nextInt
 
 @MakeComponent
 class MainFragment :
-    ComponentScheme<Fragment, MainFragmentViewModel>({ MainFragmentBinding::class })
+    ComponentScheme<Fragment, MainFragmentViewModel>({ viewModel ->
+        viewModel.toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.toastMessage = null
+        }
+        MainFragmentBinding::class
+    })
 
-class MainFragmentViewModel : ComponentViewModel() {
+class MainFragmentViewModel : CoroutineViewModel() {
 
     @Prop
     var welcomeText by state<String?>(null)
@@ -28,18 +34,30 @@ class MainFragmentViewModel : ComponentViewModel() {
         ::welcomeText.isMutableBy(TextEditorViewModel::customWelcomeText)
     }
 
-    var welcomeTextVisibility by state(VISIBLE)
-
-    var textAnimation by state<AnimatedText.Animation?>(null) {
-        Toast.makeText(context, "Current animation in ${it?.name}", Toast.LENGTH_SHORT).show()
-    }
+    var welcomeTextIsVisible by state(true)
 
     fun toggleVisibility() {
-        welcomeTextVisibility = if (welcomeTextVisibility == VISIBLE) INVISIBLE else VISIBLE
+        welcomeTextIsVisible = !welcomeTextIsVisible
+    }
+
+
+    var textAnimation by state<AnimatedText.Animation?>(null) {
+        toastMessage = "Current animation in ${it?.name}"
     }
 
     fun animate() {
         textAnimation =
             AnimatedText.Animation.values()[Random.nextInt(AnimatedText.Animation.values().indices)]
     }
+
+
+    var currentTime by state(async {
+        delay(2000)
+        System.currentTimeMillis().toString()
+    })
+
+    val currentTimeIsInitializing get() = ::currentTime.isInitializing
+
+
+    var toastMessage by state<String?>(null)
 }

@@ -4,6 +4,8 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.TranslateAnimation
+import androidx.core.view.isVisible
+import androidx.databinding.BindingAdapter
 
 fun View.fadeIn(duration: Long, callback: (() -> Unit)? = null) {
     startAnimation(AlphaAnimation(0f, 1f).apply {
@@ -83,4 +85,13 @@ fun View.translateRight(duration: Long, callback: (() -> Unit)? = null) {
             }
         )
     })
+}
+
+object Binders {
+
+    @JvmStatic
+    @BindingAdapter("isVisible")
+    fun setIsVisible(view: View, value: Boolean) {
+        view.isVisible = value
+    }
 }
