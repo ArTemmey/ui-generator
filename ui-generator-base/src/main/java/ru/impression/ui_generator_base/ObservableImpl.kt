@@ -32,6 +32,7 @@ open class ObservableImpl<R : Any, T>(
         initialValueDeferred?.let { deferred ->
             (parent as? CoroutineScope)?.launch {
                 val result = deferred.await()
+                onInitialValueLoaded(result)
                 isInitializing = false
                 (parent::class.members.firstOrNull {
                     it.isAccessible = true
@@ -41,6 +42,8 @@ open class ObservableImpl<R : Any, T>(
             }
         }
     }
+
+    open fun onInitialValueLoaded(value: T) = Unit
 
     @Synchronized
     override fun getValue(thisRef: R, property: KProperty<*>): T {
