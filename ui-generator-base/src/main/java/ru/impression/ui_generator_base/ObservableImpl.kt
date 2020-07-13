@@ -13,8 +13,8 @@ open class ObservableImpl<R : Any, T>(
     parent: R,
     initialValue: T,
     initialValueDeferred: Deferred<T>?,
-    private val immediatelyBindChanges: Boolean?,
-    private val onChanged: ((T) -> Unit)?
+    val immediatelyBindChanges: Boolean?,
+    val onChanged: ((T) -> Unit)?
 ) : ReadWriteProperty<R, T> {
 
     open val viewModel = parent as? ComponentViewModel
