@@ -1,22 +1,13 @@
 package ru.impression.ui_generator_base
 
 import android.content.ContextWrapper
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
-import ru.impression.ui_generator_annotations.SharedViewModel
-import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.*
-import kotlin.reflect.full.createInstance
-import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.isAccessible
 
 val View.activity: AppCompatActivity?
@@ -79,8 +70,13 @@ fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
     }
 }
 
-val KMutableProperty0<*>.isInitializing: Boolean
+val KMutableProperty0<*>.isLoading: Boolean
     get() {
         isAccessible = true
-        return (getDelegate() as? ObservableImpl<*, *>)?.isInitializing == true
+        return (getDelegate() as? ObservableImpl<*, *>)?.isLoading == true
     }
+
+fun KMutableProperty0<*>.reload() {
+    isAccessible = true
+    (getDelegate() as? ObservableImpl<*, *>)?.load(true)
+}

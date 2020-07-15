@@ -203,23 +203,31 @@ A ViewModel with a shared property is marked with `SharedViewModel` annotation, 
 
 Suppose that before you display some data, you need to load it first. Here's how you do it:
 ```kotlin
-var greeting: String? by state(async {
+var greeting: String? by state({
     delay(2000)
     "Hello world!"
 })
 ```
-All you need to do is inherit your model from `CoroutineViewModel`. It implements `CoroutineScope` in which your `async` block is executed. You can also execute all your other coroutines in this scope. Scope is canceled when `onCleared` is called.
+All you need to do is inherit your model from `CoroutineViewModel`. It implements `CoroutineScope` in which your suspend lambda is executed. You can also execute all your other coroutines in this scope. Scope is canceled when `onCleared` is called.
 
 You can also observe the loading state of your data. For example, in order to show the progress bar during loading:
 ```xml
 <ProgressBar
-    isVisible="@{viewModel.greetingIsInitializing}"
+    isVisible="@{viewModel.greetingIsLoading}"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content" />
 ```
 ```kotlin
-// After `isInitializing` becomes `false`, the data binding will be called and the ProgressBar will be hidden.
-val greetingIsInitializing: Boolean get() = ::greeting.isInitializing
+// After `isLoading` becomes `false`, the data binding will be called and the ProgressBar will be hidden.
+val greetingIsLoading: Boolean get() = ::greeting.isLoading
 ```
+
+And also you can reload your data:
+```kotlin
+fun reloadGreeting() {
+    ::greeting.reload()
+}
+```
+The suspend lambda will be called again and `isLoading` will become `true`. After that, the data binding will be called and the ProgressBar wil be shown again at loading time.
 
 ***For detailed examples see module `app`.***

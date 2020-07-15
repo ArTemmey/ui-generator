@@ -62,15 +62,21 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@{viewModel.currentTime}"
-                tools:text="12345"/>
+                tools:text="12345" />
 
             <ProgressBar
-                isVisible="@{viewModel.currentTimeIsInitializing}"
+                isVisible="@{viewModel.currentTimeIsLoading}"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center" />
 
         </FrameLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{() -> viewModel.reloadCurrentTime()}"
+            android:text="reload" />
 
     </LinearLayout>
 

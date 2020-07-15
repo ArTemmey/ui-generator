@@ -8,7 +8,8 @@ import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.CoroutineViewModel
-import ru.impression.ui_generator_base.isInitializing
+import ru.impression.ui_generator_base.isLoading
+import ru.impression.ui_generator_base.reload
 import ru.impression.ui_generator_example.databinding.MainFragmentBinding
 import ru.impression.ui_generator_example.view.AnimatedText
 import ru.impression.ui_generator_example.view.TextEditorViewModel
@@ -51,12 +52,16 @@ class MainFragmentViewModel : CoroutineViewModel() {
     }
 
 
-    var currentTime by state(async {
-        delay(2000)
+    var currentTime by state({
+        delay(3000)
         System.currentTimeMillis().toString()
     })
 
-    val currentTimeIsInitializing get() = ::currentTime.isInitializing
+    val currentTimeIsLoading get() = ::currentTime.isLoading
+
+    fun reloadCurrentTime() {
+        ::currentTime.reload()
+    }
 
 
     var toastMessage by state<String?>(null)
