@@ -225,9 +225,10 @@ val greetingIsLoading: Boolean get() = ::greeting.isLoading
 And also you can reload your data:
 ```kotlin
 fun reloadGreeting() {
+    // The suspend lambda will be called again and `isLoading` will become `true`.
+    // After that, the data binding will be called and the ProgressBar wil be shown again at loading time.
     ::greeting.reload()
 }
 ```
-The suspend lambda will be called again and `isLoading` will become `true`. After that, the data binding will be called and the ProgressBar wil be shown again at loading time.
 
 ***For detailed examples see module `app`.***
