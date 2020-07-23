@@ -9,7 +9,7 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.isAccessible
 
-open class ObservableImpl<R : Any, T>(
+open class StateImpl<R : Any, T>(
     val parent: R,
     initialValue: T,
     val getInitialValue: (suspend () -> T)?,
@@ -44,7 +44,7 @@ open class ObservableImpl<R : Any, T>(
             (parent::class.members.firstOrNull {
                 it.isAccessible = true
                 it is KMutableProperty1<*, *> && (it as KMutableProperty1<R, *>)
-                    .getDelegate(parent) === this@ObservableImpl
+                    .getDelegate(parent) === this@StateImpl
             } as KMutableProperty1<R, T>?)?.set(parent, result)
             loadJob = null
         }

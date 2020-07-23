@@ -35,7 +35,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         immediatelyBindChanges: Boolean = false,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
-        ObservableImpl(this, initialValue, null, immediatelyBindChanges, onChanged)
+        StateImpl(this, initialValue, null, immediatelyBindChanges, onChanged)
 
     @CallSuper
     open fun onStateChanged(immediatelyBindChanges: Boolean = false) {
@@ -46,7 +46,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
     ): ReadWriteProperty<ComponentViewModel, T> =
-        ObservableImpl(this, initialValue, null, null, onChanged)
+        StateImpl(this, initialValue, null, null, onChanged)
 
     protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
         vararg properties: KMutableProperty1<VM, T>
@@ -114,6 +114,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     }
 
     final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        val boundLifecycleOwner = boundLifecycleOwner
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             if (source === boundLifecycleOwner) {
                 removeOnStateChangedListener()

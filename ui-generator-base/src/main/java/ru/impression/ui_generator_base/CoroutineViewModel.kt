@@ -12,13 +12,13 @@ abstract class CoroutineViewModel : ComponentViewModel(),
         immediatelyBindChanges: Boolean = false,
         onChanged: ((T?) -> Unit)? = null
     ): ReadWriteProperty<CoroutineViewModel, T?> =
-        ObservableImpl(this, null, getInitialValue, immediatelyBindChanges, onChanged)
+        StateImpl(this, null, getInitialValue, immediatelyBindChanges, onChanged)
 
     protected fun <T> observable(
         getInitialValue: suspend () -> T,
         onChanged: ((T?) -> Unit)? = null
     ): ReadWriteProperty<CoroutineViewModel, T?> =
-        ObservableImpl(this, null, getInitialValue, null, onChanged)
+        StateImpl(this, null, getInitialValue, null, onChanged)
 
     @CallSuper
     override fun onCleared() {

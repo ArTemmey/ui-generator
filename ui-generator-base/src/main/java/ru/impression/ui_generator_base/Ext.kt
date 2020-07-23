@@ -73,10 +73,10 @@ fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
 val KMutableProperty0<*>.isLoading: Boolean
     get() {
         isAccessible = true
-        return (getDelegate() as? ObservableImpl<*, *>)?.isLoading == true
+        return (getDelegate() as? StateImpl<*, *>)?.isLoading == true
     }
 
 fun KMutableProperty0<*>.reload() {
     isAccessible = true
-    (getDelegate() as? ObservableImpl<*, *>)?.load(true)
+    (getDelegate() as? StateImpl<*, *>)?.load(true)
 }
