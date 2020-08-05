@@ -34,7 +34,7 @@ class FragmentComponentClassBuilder(
                     bindableProperties.forEach {
                         add(
                             """
-                                if (${it.name} != null && ${it.name} != viewModel.${it.name})
+                                if (${it.name} != null && ${it.name} !== viewModel.${it.name})
                                   viewModel::${it.name}.%M(viewModel, ${it.name})
                                   
                                   """.trimIndent(),

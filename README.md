@@ -143,7 +143,7 @@ property3 = true
 //data binding will only be done once
 ```
 
-Data binding is performed at one time for all Views by replacing the old bound ViewModel with a new one. And this does not make the binding algorithm more complicated than using LiveData and ObservableFields, since all native data binding adapters and generated ones are not executed if the new value is equal to the old one.
+Data binding is performed at one time for all Views by replacing the old bound ViewModel with a new one. And this does not make the binding algorithm more complicated than using LiveData and ObservableFields, since all native data binding adapters and generated ones are not executed if the new value is the same as the old one.
 
 You can manually initiate data binding by calling `onStateChanged` function in ViewModel.
 

@@ -219,7 +219,7 @@ class ViewComponentClassBuilder(
             addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
             addCode(
                 """
-                    if (value == view.viewModel.${bindableProperty.name}) return
+                    if (value === view.viewModel.${bindableProperty.name}) return
                     view.viewModel::${bindableProperty.name}.%M(view.viewModel, value)
                 """.trimIndent(),
                 MemberName("ru.impression.ui_generator_base", "set")
