@@ -3,13 +3,14 @@ package ru.impression.ui_generator_base
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import ru.impression.kotlin_delegate_concatenator.DelegateSum
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.isAccessible
 
-open class StateImpl<R : Any, T>(
+open class StateDelegate<R : Any, T>(
     val parent: R,
     initialValue: T,
     val getInitialValue: (suspend () -> T)?,
@@ -43,8 +44,11 @@ open class StateImpl<R : Any, T>(
             isLoading = false
             (parent::class.members.firstOrNull {
                 it.isAccessible = true
-                it is KMutableProperty1<*, *> && (it as KMutableProperty1<R, *>)
-                    .getDelegate(parent) === this@StateImpl
+                val targetDelegate = (it as? KMutableProperty1<R, *>)?.getDelegate(parent)
+                if (targetDelegate is DelegateSum<*, *>)
+                    this@StateDelegate == targetDelegate.delegate1 || this@StateDelegate == targetDelegate.delegate2
+                else
+                    this@StateDelegate == targetDelegate
             } as KMutableProperty1<R, T>?)?.set(parent, result)
             loadJob = null
         }
