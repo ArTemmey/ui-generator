@@ -44,12 +44,8 @@ open class StateDelegate<R : Any, T>(
             isLoading = false
             (parent::class.members.firstOrNull {
                 it.isAccessible = true
-                val targetDelegate = (it as? KMutableProperty1<R, *>)?.getDelegate(parent)
-                if (targetDelegate is DelegateSum<*, *>)
-                    this@StateDelegate == targetDelegate.delegate1 || this@StateDelegate == targetDelegate.delegate2
-                else
-                    this@StateDelegate == targetDelegate
-            } as KMutableProperty1<R, T>?)?.set(parent, result)
+                (it as? KMutableProperty<*>)?.getStateDelegate(parent) == this@StateDelegate
+            } as? KMutableProperty1<R, T>?)?.set(parent, result)
             loadJob = null
         }
     }

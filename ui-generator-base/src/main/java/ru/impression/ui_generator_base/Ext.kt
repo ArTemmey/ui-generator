@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import ru.impression.kotlin_delegate_concatenator.DelegateSum
 import kotlin.reflect.*
 import kotlin.reflect.jvm.isAccessible
 
@@ -70,13 +71,25 @@ fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
     }
 }
 
+internal fun KMutableProperty<*>.getStateDelegate(receiver: Any?): StateDelegate<*, *>? {
+    isAccessible = true
+    val delegate = when (this) {
+        is KMutableProperty0<*> -> getDelegate()
+        is KMutableProperty1<*, *> -> (this as KMutableProperty1<Any?, *>).getDelegate(receiver)
+        else -> return null
+    }
+    return delegate as? StateDelegate<*, *> ?: with(
+        delegate as? DelegateSum<*, *> ?: return null
+    ) { delegate1 as? StateDelegate<*, *> ?: delegate2 as? StateDelegate<*, *> }
+}
+
 val KMutableProperty0<*>.isLoading: Boolean
     get() {
         isAccessible = true
-        return (getDelegate() as? StateDelegate<*, *>)?.isLoading == true
+        return getStateDelegate(null)?.isLoading == true
     }
 
 fun KMutableProperty0<*>.reload() {
     isAccessible = true
-    (getDelegate() as? StateDelegate<*, *>)?.load(true)
+    getStateDelegate(null)?.load(true)
 }
