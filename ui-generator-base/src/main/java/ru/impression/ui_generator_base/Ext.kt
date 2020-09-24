@@ -31,7 +31,9 @@ internal fun KClass<out ViewDataBinding>.inflate(
         Boolean::class.javaPrimitiveType
     ).invoke(
         null,
-        LayoutInflater.from((component as? Fragment)?.context ?: (component as? View)?.context),
+        LayoutInflater.from(
+            (component as? Fragment)?.context ?: (component as? View)?.context ?: return@let null
+        ),
         it,
         attachToRoot
     ) as ViewDataBinding).apply {
