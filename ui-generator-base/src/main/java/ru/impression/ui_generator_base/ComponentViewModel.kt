@@ -7,7 +7,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
-import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty1
@@ -34,8 +33,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
         initialValue: T,
         immediatelyBindChanges: Boolean = false,
         onChanged: ((T) -> Unit)? = null
-    ): ReadWriteProperty<ComponentViewModel, T> =
-        StateDelegate(this, initialValue, null, immediatelyBindChanges, onChanged)
+    ) = StateDelegate(this, initialValue, null, immediatelyBindChanges, onChanged)
 
     @CallSuper
     open fun onStateChanged(immediatelyBindChanges: Boolean = false) {
@@ -45,8 +43,7 @@ abstract class ComponentViewModel : ViewModel(), LifecycleEventObserver {
     protected fun <T> observable(
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
-    ): ReadWriteProperty<ComponentViewModel, T> =
-        StateDelegate(this, initialValue, null, null, onChanged)
+    ) = StateDelegate(this, initialValue, null, null, onChanged)
 
     protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
         vararg properties: KMutableProperty1<VM, T>
