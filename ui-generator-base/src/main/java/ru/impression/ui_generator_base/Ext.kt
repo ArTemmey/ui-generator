@@ -24,28 +24,36 @@ internal fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
     attachToRoot: Boolean
 ) = (component.container as? ViewGroup).let {
-    (java.getDeclaredMethod(
-        "inflate",
-        LayoutInflater::class.java,
-        ViewGroup::class.java,
-        Boolean::class.javaPrimitiveType
-    ).invoke(
-        null,
-        LayoutInflater.from(
-            (component as? Fragment)?.context ?: (component as? View)?.context ?: return@let null
-        ),
-        it,
-        attachToRoot
-    ) as ViewDataBinding).apply {
-        this.lifecycleOwner = component.boundLifecycleOwner
-        setComponent(component)
-        setViewModel(component.viewModel)
+    try {
+        (java.getDeclaredMethod(
+            "inflate",
+            LayoutInflater::class.java,
+            ViewGroup::class.java,
+            Boolean::class.javaPrimitiveType
+        ).invoke(
+            null,
+            LayoutInflater.from(
+                (component as? Fragment)?.context ?: (component as? View)?.context
+                ?: return@let null
+            ),
+            it,
+            attachToRoot
+        ) as ViewDataBinding).apply {
+            this.lifecycleOwner = component.boundLifecycleOwner
+            setComponent(component)
+            setViewModel(component.viewModel)
+        }
+    } catch (e: NoSuchMethodException) {
+        null
     }
 }
 
 internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
-    this::class.java.getDeclaredMethod("setViewModel", viewModel::class.java)
-        .invoke(this, viewModel)
+    try {
+        this::class.java.getDeclaredMethod("setViewModel", viewModel::class.java)
+            .invoke(this, viewModel)
+    } catch (e: NoSuchMethodException) {
+    }
 }
 
 internal fun ViewDataBinding.setComponent(component: Component<*, *>) {
