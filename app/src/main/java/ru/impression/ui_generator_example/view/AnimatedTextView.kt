@@ -28,7 +28,7 @@ class AnimatedTextView : ComponentScheme<AppCompatTextView, AnimatedTextViewMode
     enum class Animation { FADE_IN, FADE_OUT, TRANSLATE_LEFT, TRANSLATE_RIGHT }
 }
 
-class AnimatedTextViewModel : ComponentViewModel(R.styleable.AnimatedTextViewComponent) {
+class AnimatedTextViewModel : ComponentViewModel(attrs = R.styleable.AnimatedTextViewComponent) {
 
     @Prop(twoWay = true)
     var animation by state<AnimatedTextView.Animation?>(null)

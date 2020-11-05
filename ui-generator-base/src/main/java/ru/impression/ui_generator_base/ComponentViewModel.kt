@@ -19,7 +19,11 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var onStateChangedListener: Runnable? = null
+    private var onStateChangedListener: (() -> Unit)? = null
+
+    private val onStateChangedListenerCaller = Runnable {
+        callOnStateChangedListener(true)
+    }
 
     internal var hasMissedStateChange = false
 
@@ -62,28 +66,27 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
         }
     }
 
-    fun setOnStateChangedListener(owner: LifecycleOwner, listener: Runnable) {
+    fun setOnStateChangedListener(owner: LifecycleOwner, listener: () -> Unit) {
         onStateChangedListener = listener
         boundLifecycleOwner = owner
         owner.lifecycle.addObserver(this)
         if (hasMissedStateChange) {
             hasMissedStateChange = false
-            listener.run()
+            listener()
         }
     }
 
     private fun callOnStateChangedListener(immediately: Boolean) {
         onStateChangedListener?.let {
-            handler.removeCallbacks(it)
+            handler.removeCallbacks(onStateChangedListenerCaller)
             if (immediately && Thread.currentThread() === Looper.getMainLooper().thread)
-                it.run()
+                it()
             else
-                handler.post(it)
+                handler.post(onStateChangedListenerCaller)
         } ?: run { hasMissedStateChange = true }
     }
 
     private fun removeOnStateChangedListener() {
-        onStateChangedListener?.let { handler.removeCallbacks(it) }
         onStateChangedListener = null
         boundLifecycleOwner?.lifecycle?.removeObserver(this)
         boundLifecycleOwner = null
