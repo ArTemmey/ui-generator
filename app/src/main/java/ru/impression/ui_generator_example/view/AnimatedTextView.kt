@@ -8,13 +8,11 @@ import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.ComponentViewModel
-import ru.impression.ui_generator_example.fadeIn
-import ru.impression.ui_generator_example.fadeOut
-import ru.impression.ui_generator_example.translateLeft
-import ru.impression.ui_generator_example.translateRight
+import ru.impression.ui_generator_base.bindText
+import ru.impression.ui_generator_example.*
 
 @MakeComponent
-class AnimatedText : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({ viewModel ->
+class AnimatedTextView : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({ viewModel ->
     viewModel.animation?.let {
         clearAnimation()
         when (it) {
@@ -24,15 +22,19 @@ class AnimatedText : ComponentScheme<AppCompatTextView, AnimatedTextViewModel>({
             Animation.TRANSLATE_RIGHT -> translateRight(1000) { viewModel.onAnimationCompleted() }
         }
     }
+    bindText(viewModel.animatedText)
     null
 }) {
     enum class Animation { FADE_IN, FADE_OUT, TRANSLATE_LEFT, TRANSLATE_RIGHT }
 }
 
-class AnimatedTextViewModel : ComponentViewModel() {
+class AnimatedTextViewModel : ComponentViewModel(R.styleable.AnimatedTextViewComponent) {
 
     @Prop(twoWay = true)
-    var animation by state<AnimatedText.Animation?>(null)
+    var animation by state<AnimatedTextView.Animation?>(null)
+
+    @Prop(attr = R.styleable.AnimatedTextViewComponent_animatedText)
+    var animatedText by state<String?>(null)
 
     fun onAnimationCompleted() {
         animation = null

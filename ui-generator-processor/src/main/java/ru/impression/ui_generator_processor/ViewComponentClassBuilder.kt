@@ -117,9 +117,11 @@ class ViewComponentClassBuilder(
     private fun buildInitializerBlock() = with(CodeBlock.builder()) {
         addStatement(
             """
+                %M(attrs)
                 render(false)
                 startObservations()
-                """.trimIndent()
+                """.trimIndent(),
+            MemberName("ru.impression.ui_generator_base", "resolveAttrs")
         )
         build()
     }

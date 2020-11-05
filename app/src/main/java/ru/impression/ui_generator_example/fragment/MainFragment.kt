@@ -2,7 +2,6 @@ package ru.impression.ui_generator_example.fragment
 
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
@@ -11,7 +10,7 @@ import ru.impression.ui_generator_base.CoroutineViewModel
 import ru.impression.ui_generator_base.isLoading
 import ru.impression.ui_generator_base.reload
 import ru.impression.ui_generator_example.databinding.MainFragmentBinding
-import ru.impression.ui_generator_example.view.AnimatedText
+import ru.impression.ui_generator_example.view.AnimatedTextView
 import ru.impression.ui_generator_example.view.TextEditorViewModel
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -42,13 +41,13 @@ class MainFragmentViewModel : CoroutineViewModel() {
     }
 
 
-    var textAnimation by state<AnimatedText.Animation?>(null) {
+    var textAnimation by state<AnimatedTextView.Animation?>(null) {
         toastMessage = "Current animation in ${it?.name}"
     }
 
     fun animate() {
         textAnimation =
-            AnimatedText.Animation.values()[Random.nextInt(AnimatedText.Animation.values().indices)]
+            AnimatedTextView.Animation.values()[Random.nextInt(AnimatedTextView.Animation.values().indices)]
     }
 
 

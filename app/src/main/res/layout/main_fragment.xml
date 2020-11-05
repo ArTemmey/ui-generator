@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:tools="http://schemas.android.com/tools">
+<layout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
 
@@ -34,12 +35,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
-        <ru.impression.ui_generator_example.view.AnimatedTextComponent
+        <ru.impression.ui_generator_example.view.AnimatedTextViewComponent
             animation="@={viewModel.textAnimation}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="Animated text" />
+            app:animatedText="Animated text" />
 
         <Button
             android:layout_width="wrap_content"

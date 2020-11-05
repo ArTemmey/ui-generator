@@ -3,7 +3,7 @@ package ru.impression.ui_generator_base
 import androidx.annotation.CallSuper
 import kotlinx.coroutines.Dispatchers
 
-abstract class CoroutineViewModel : ComponentViewModel(),
+abstract class CoroutineViewModel(attrs: IntArray? = null) : ComponentViewModel(attrs),
     ClearableCoroutineScope by ClearableCoroutineScopeImpl(Dispatchers.IO) {
 
     protected fun <T> state(

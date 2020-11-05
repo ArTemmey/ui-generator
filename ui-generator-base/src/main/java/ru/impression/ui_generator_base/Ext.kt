@@ -1,6 +1,8 @@
 package ru.impression.ui_generator_base
 
 import android.content.ContextWrapper
+import android.graphics.drawable.Drawable
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,7 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
+import ru.impression.ui_generator_annotations.Prop
 import kotlin.reflect.*
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.findAnnotation
 
 val View.activity: AppCompatActivity?
     get() {
@@ -19,6 +24,39 @@ val View.activity: AppCompatActivity?
         }
         return contextWrapper
     }
+
+fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
+    with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {
+        try {
+            propertyLoop@ for (property in viewModel::class.declaredMemberProperties) {
+                val propAnnotation = property.findAnnotation<Prop>() ?: continue
+                if (property is KMutableProperty<*> && propAnnotation.attr != -1)
+                    property.set(
+                        viewModel,
+                        when (property.returnType.classifier) {
+                            Boolean::class -> getBoolean(
+                                propAnnotation.attr,
+                                property.get(viewModel) as Boolean? ?: false
+                            )
+                            Int::class -> getInt(
+                                propAnnotation.attr,
+                                property.get(viewModel) as Int? ?: 0
+                            )
+                            Float::class -> getFloat(
+                                propAnnotation.attr,
+                                property.get(viewModel) as Float? ?: 0f
+                            )
+                            String::class -> getString(propAnnotation.attr)
+                            Drawable::class -> getDrawable(propAnnotation.attr)
+                            else -> continue@propertyLoop
+                        }
+                    )
+            }
+        } finally {
+            recycle()
+        }
+    }
+}
 
 internal fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
