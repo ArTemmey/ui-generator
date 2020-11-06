@@ -67,7 +67,7 @@ class FragmentComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        delegate("lazy { viewLifecycleOwner }")
+        getter(FunSpec.getterBuilder().addCode("return viewLifecycleOwner").build())
         build()
     }
 
