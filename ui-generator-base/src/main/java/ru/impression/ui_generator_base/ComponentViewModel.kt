@@ -36,12 +36,12 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
 
     protected fun <T> state(
         initialValue: T,
-        immediatelyBindChanges: Boolean = false,
+        immediatelyBindChanges: Boolean = true,
         onChanged: ((T) -> Unit)? = null
     ) = StateDelegate(this, initialValue, null, immediatelyBindChanges, onChanged)
 
     @CallSuper
-    open fun onStateChanged(immediatelyBindChanges: Boolean = false) {
+    open fun onStateChanged(immediatelyBindChanges: Boolean = true) {
         callOnStateChangedListener(immediatelyBindChanges)
     }
 
