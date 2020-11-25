@@ -1,7 +1,6 @@
 package ru.impression.ui_generator_processor
 
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 
@@ -22,7 +21,7 @@ class FragmentComponentClassBuilder(
     override fun buildViewModelProperty() =
         with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
             addModifiers(KModifier.OVERRIDE)
-            delegate(if (bindableProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class) } ") else
+            delegate(if (propProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class) } ") else
                 with(CodeBlock.builder()) {
                     add(
                         """
@@ -31,14 +30,14 @@ class FragmentComponentClassBuilder(
                         
                         """.trimIndent()
                     )
-                    bindableProperties.forEach {
+                    propProperties.forEach {
                         add(
                             """
                                 if (${it.name} != null && ${it.name} !== viewModel.${it.name})
-                                  viewModel::${it.name}.%M(viewModel, ${it.name})
+                                  viewModel::${it.name}.%M(${it.name})
                                   
                                   """.trimIndent(),
-                            MemberName("ru.impression.ui_generator_base", "set")
+                            MemberName("ru.impression.ui_generator_base", "safeSetProp")
                         )
                     }
                     add(
@@ -72,16 +71,16 @@ class FragmentComponentClassBuilder(
     }
 
     override fun TypeSpec.Builder.addRestMembers() {
-        bindableProperties.forEach { addProperty(buildBindableProperty(it)) }
+        propProperties.forEach { addProperty(buildPropWrapperProperty(it)) }
         addFunction(buildOnCreateViewFunction())
         addFunction(buildOnActivityCreatedFunction())
         addFunction(buildOnDestroyViewFunction())
     }
 
-    private fun buildBindableProperty(bindableProperty: BindableProperty) = with(
+    private fun buildPropWrapperProperty(propProperty: PropProperty) = with(
         PropertySpec.builder(
-            bindableProperty.name,
-            bindableProperty.type.asTypeName().javaToKotlinType().copy(true)
+            propProperty.name,
+            propProperty.type.asTypeName().javaToKotlinType().copy(true)
         )
     ) {
         mutable(true)

@@ -3,7 +3,6 @@ package ru.impression.ui_generator_processor
 import com.squareup.kotlinpoet.*
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
 class ViewComponentClassBuilder(
     scheme: TypeElement,
@@ -54,13 +53,13 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("defStyleAttr")
         addProperty(buildLifecycleRegistryProperty())
         addProperty(buildIsDetachedFromWindowProperty())
-        bindableProperties.forEach {
-            if (it.twoWay) addProperty(buildBindablePropertyAttrChangedProperty(it))
+        propProperties.forEach {
+            if (it.twoWay) addProperty(buildAttrChangedProperty(it))
         }
         addInitializerBlock(buildInitializerBlock())
         addFunction(buildGetLifecycleFunction())
-        if (bindableProperties.firstOrNull { it.twoWay } != null)
-            addFunction(buildStartObservationsFunction())
+        if (propProperties.firstOrNull { it.twoWay } != null)
+            addFunction(buildOnTwoWayPropChangedFunction())
         addFunction(buildOnAttachedToWindowFunction())
         addFunction(buildOnDetachedFromWindowFunction())
         addType(buildCompanionObject())
@@ -101,10 +100,10 @@ class ViewComponentClassBuilder(
             build()
         }
 
-    private fun buildBindablePropertyAttrChangedProperty(bindableProperty: BindableProperty) =
+    private fun buildAttrChangedProperty(propProperty: PropProperty) =
         with(
             PropertySpec.builder(
-                bindableProperty.attrChangedPropertyName,
+                propProperty.attrChangedPropertyName,
                 ClassName("androidx.databinding", "InverseBindingListener").copy(true)
             )
         ) {
@@ -132,22 +131,16 @@ class ViewComponentClassBuilder(
         build()
     }
 
-    private fun buildStartObservationsFunction() =
-        with(FunSpec.builder("startObservations")) {
+    private fun buildOnTwoWayPropChangedFunction() =
+        with(FunSpec.builder("onTwoWayPropChanged")) {
             addModifiers(KModifier.OVERRIDE)
+            addParameter("propertyName", ClassName("kotlin", "String"))
             addCode(
                 """
-                    super.startObservations()
-                    """.trimIndent()
+                     when (propertyName) {
+                     """.trimIndent()
             )
-            addCode(
-                """
-                    
-                    viewModel.addOnPropertyChangedListener(this) { property, _ ->
-                      when (property.name) {
-            """.trimIndent()
-            )
-            bindableProperties.forEach {
+            propProperties.forEach {
                 if (it.twoWay)
                     addCode(
                         """
@@ -159,8 +152,7 @@ class ViewComponentClassBuilder(
             }
             addCode(
                 """
-                    
-                      }
+
                     }
                     """.trimIndent()
             )
@@ -199,64 +191,64 @@ class ViewComponentClassBuilder(
         }
 
     private fun buildCompanionObject(): TypeSpec = with(TypeSpec.companionObjectBuilder()) {
-        bindableProperties.forEach {
-            addFunction(buildSetBindablePropertyFunction(it))
+        propProperties.forEach {
+            addFunction(buildPropSetter(it))
             if (it.twoWay) {
-                addFunction(buildSetBindablePropertyAttrChangedFunction(it))
-                addFunction(buildGetBindablePropertyFunction(it))
+                addFunction(buildAttrChangedSetter(it))
+                addFunction(buildPropGetter(it))
             }
         }
         build()
     }
 
-    private fun buildSetBindablePropertyFunction(bindableProperty: BindableProperty) =
-        with(FunSpec.builder("set${bindableProperty.capitalizedName}")) {
+    private fun buildPropSetter(propProperty: PropProperty) =
+        with(FunSpec.builder("set${propProperty.capitalizedName}")) {
             addAnnotation(JvmStatic::class.java)
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", bindableProperty.name).build()
+                ).addMember("%S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            addParameter("value", bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
+            addParameter("value", propProperty.type.asTypeName().javaToKotlinType().copy(true))
             addCode(
                 """
-                    if (value === view.viewModel.${bindableProperty.name}) return
-                    view.viewModel::${bindableProperty.name}.%M(view.viewModel, value)
+                    if (value === view.viewModel.${propProperty.name}) return
+                    view.viewModel::${propProperty.name}.%M(value)
                 """.trimIndent(),
-                MemberName("ru.impression.ui_generator_base", "set")
+                MemberName("ru.impression.ui_generator_base", "safeSetProp")
             )
             build()
         }
 
-    private fun buildSetBindablePropertyAttrChangedFunction(bindableProperty: BindableProperty) =
-        with(FunSpec.builder("set${bindableProperty.capitalizedName}AttrChanged")) {
+    private fun buildAttrChangedSetter(propProperty: PropProperty) =
+        with(FunSpec.builder("set${propProperty.capitalizedName}AttrChanged")) {
             addAnnotation(JvmStatic::class.java)
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "BindingAdapter")
-                ).addMember("%S", bindableProperty.attrChangedPropertyName).build()
+                ).addMember("%S", propProperty.attrChangedPropertyName).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
             addParameter(
                 "value",
                 ClassName("androidx.databinding", "InverseBindingListener").copy(true)
             )
-            addCode("view.${bindableProperty.attrChangedPropertyName} = value")
+            addCode("view.${propProperty.attrChangedPropertyName} = value")
             build()
         }
 
-    private fun buildGetBindablePropertyFunction(bindableProperty: BindableProperty) =
-        with(FunSpec.builder("get${bindableProperty.capitalizedName}")) {
+    private fun buildPropGetter(propProperty: PropProperty) =
+        with(FunSpec.builder("get${propProperty.capitalizedName}")) {
             addAnnotation(JvmStatic::class.java)
             addAnnotation(
                 AnnotationSpec.builder(
                     ClassName("androidx.databinding", "InverseBindingAdapter")
-                ).addMember("attribute = %S", bindableProperty.name).build()
+                ).addMember("attribute = %S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            returns(bindableProperty.type.asTypeName().javaToKotlinType().copy(true))
-            addCode("return view.viewModel.${bindableProperty.name}")
+            returns(propProperty.type.asTypeName().javaToKotlinType().copy(true))
+            addCode("return view.viewModel.${propProperty.name}")
             build()
         }
 }

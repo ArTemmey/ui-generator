@@ -13,13 +13,15 @@ import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
-    LifecycleEventObserver {
+    StateParent, LifecycleEventObserver {
 
     private var boundLifecycleOwner: LifecycleOwner? = null
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var onStateChangedListener: (() -> Unit)? = null
+    private var onStateChanged: (() -> Unit)? = null
+
+    private var onTwoWayPropChanged: ((propertyName: String) -> Unit)? = null
 
     private val onStateChangedListenerCaller = Runnable {
         callOnStateChangedListener(true)
@@ -27,104 +29,57 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
 
     internal var hasMissedStateChange = false
 
-    @PublishedApi
-    internal val sharedProperties =
-        HashMap<KClass<out ComponentViewModel>, HashMap<KMutableProperty<*>, ArrayList<KMutableProperty<*>>>>()
-
-    private val onPropertyChangedListeners =
-        HashMap<LifecycleOwner, (property: KMutableProperty<*>, value: Any?) -> Unit>()
-
-    protected fun <T> state(
-        initialValue: T,
-        immediatelyBindChanges: Boolean = true,
-        onChanged: ((T) -> Unit)? = null
-    ) = StateDelegate(this, initialValue, null, immediatelyBindChanges, onChanged)
+    protected fun <T> state(initialValue: T, onChanged: ((T) -> Unit)? = null) =
+        StateDelegate(this, initialValue, null, onChanged)
 
     @CallSuper
-    open fun onStateChanged(immediatelyBindChanges: Boolean = true) {
-        callOnStateChangedListener(immediatelyBindChanges)
+    override fun onStateChanged(renderImmediately: Boolean) {
+        callOnStateChangedListener(renderImmediately)
     }
 
-    protected fun <T> observable(
-        initialValue: T,
-        onChanged: ((T) -> Unit)? = null
-    ) = StateDelegate(this, initialValue, null, null, onChanged)
 
-    protected inline fun <reified VM : ComponentViewModel, T> KProperty<T>.isMutableBy(
-        vararg properties: KMutableProperty1<VM, T>
+    fun setListeners(
+        owner: LifecycleOwner,
+        onStateChanged: () -> Unit,
+        onTwoWayPropChanged: (propertyName: String) -> Unit
     ) {
-        val map = sharedProperties[VM::class]
-            ?: HashMap<KMutableProperty<*>, ArrayList<KMutableProperty<*>>>()
-                .also { sharedProperties[VM::class] = it }
-        properties.forEach { property ->
-            val list = map[property]
-                ?: ArrayList<KMutableProperty<*>>().also { map[property] = it }
-            list.add(
-                this as? KMutableProperty<*>
-                    ?: throw UnsupportedOperationException("Property must be mutable")
-            )
-        }
-    }
-
-    fun setOnStateChangedListener(owner: LifecycleOwner, listener: () -> Unit) {
-        onStateChangedListener = listener
+        this.onStateChanged = onStateChanged
+        this.onTwoWayPropChanged = onTwoWayPropChanged
         boundLifecycleOwner = owner
         owner.lifecycle.addObserver(this)
         if (hasMissedStateChange) {
             hasMissedStateChange = false
-            listener()
+            onStateChanged()
         }
     }
 
-    private fun callOnStateChangedListener(immediately: Boolean) {
-        onStateChangedListener?.let {
+    private fun callOnStateChangedListener(renderImmediately: Boolean) {
+        onStateChanged?.let {
             handler.removeCallbacks(onStateChangedListenerCaller)
-            if (immediately && Thread.currentThread() === Looper.getMainLooper().thread)
+            if (renderImmediately && Thread.currentThread() === Looper.getMainLooper().thread)
                 it()
             else
                 handler.post(onStateChangedListenerCaller)
         } ?: run { hasMissedStateChange = true }
     }
 
-    private fun removeOnStateChangedListener() {
-        onStateChangedListener = null
+    fun callOnTwoWayPropChangedListener(propertyName: String) {
+        onTwoWayPropChanged?.invoke(propertyName)
+    }
+
+    private fun removeListeners() {
+        onStateChanged = null
+        onTwoWayPropChanged = null
+        handler.removeCallbacks(onStateChangedListenerCaller)
         boundLifecycleOwner?.lifecycle?.removeObserver(this)
         boundLifecycleOwner = null
     }
 
-    fun addOnPropertyChangedListener(
-        owner: LifecycleOwner,
-        listener: (property: KProperty<*>, value: Any?) -> Unit
-    ) {
-        onPropertyChangedListeners[owner] = listener
-        owner.lifecycle.addObserver(this)
-    }
-
-    internal fun callOnPropertyChangedListeners(property: KMutableProperty<*>, value: Any?) {
-        onPropertyChangedListeners.values.forEach { it(property, value) }
-    }
-
-    private fun removeOnPropertyChangedListener(owner: LifecycleOwner) {
-        onPropertyChangedListeners.remove(owner)
-        owner.lifecycle.removeObserver(this)
-    }
-
-    private fun clearOnPropertyChangedListeners() {
-        onPropertyChangedListeners.keys.forEach { it.lifecycle.removeObserver(this) }
-        onPropertyChangedListeners.clear()
-    }
-
     final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         val boundLifecycleOwner = boundLifecycleOwner
-        if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
-            if (source === boundLifecycleOwner) {
-                removeOnStateChangedListener()
-                clearOnPropertyChangedListeners()
-            } else {
-                removeOnPropertyChangedListener(source)
-            }
-        }
-        if (source === boundLifecycleOwner) onLifecycleEvent(event)
+        if (source !== boundLifecycleOwner) return
+        onLifecycleEvent(event)
+        if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) removeListeners()
     }
 
     open fun onLifecycleEvent(event: Lifecycle.Event) = Unit

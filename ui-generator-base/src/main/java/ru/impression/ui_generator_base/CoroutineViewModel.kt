@@ -6,16 +6,8 @@ import kotlinx.coroutines.Dispatchers
 abstract class CoroutineViewModel(attrs: IntArray? = null) : ComponentViewModel(attrs),
     ClearableCoroutineScope by ClearableCoroutineScopeImpl(Dispatchers.IO) {
 
-    protected fun <T> state(
-        getInitialValue: suspend () -> T,
-        immediatelyBindChanges: Boolean = false,
-        onChanged: ((T?) -> Unit)? = null
-    ) = StateDelegate(this, null, getInitialValue, immediatelyBindChanges, onChanged)
-
-    protected fun <T> observable(
-        getInitialValue: suspend () -> T,
-        onChanged: ((T?) -> Unit)? = null
-    ) = StateDelegate(this, null, getInitialValue, null, onChanged)
+    protected fun <T> state(getInitialValue: suspend () -> T, onChanged: ((T?) -> Unit)? = null) =
+        StateDelegate(this, null, getInitialValue, onChanged)
 
     @CallSuper
     override fun onCleared() {

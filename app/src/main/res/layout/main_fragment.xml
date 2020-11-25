@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
         <variable
             name="viewModel"
-            type="ru.impression.ui_generator_example.fragment.MainFragmentViewModel" />
+            type="ru.impression.ui_generator_example.MainFragmentViewModel" />
 
-        <variable
-            name="component"
-            type="ru.impression.ui_generator_example.fragment.MainFragmentComponent" />
     </data>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -19,44 +16,56 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <ru.impression.ui_generator_example.ToastShowerComponent
+            message="@={viewModel.toastMessage}"
+            android:layout_width="0dp"
+            android:layout_height="0dp" />
+
         <androidx.appcompat.widget.AppCompatTextView
-            isVisible="@{viewModel.welcomeTextIsVisible}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@{viewModel.welcomeText}" />
+            android:text="@{viewModel.welcomeText}"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.toggleVisibility()}"
-            android:text="Toggle visibility" />
-
-        <ru.impression.ui_generator_example.view.TextEditorComponent
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <ru.impression.ui_generator_example.view.AnimatedTextViewComponent
-            animation="@={viewModel.textAnimation}"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            app:animatedText="Animated text" />
+            android:orientation="horizontal">
 
-        <Button
+            <ru.impression.ui_generator_example.TitledPictureComponent
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:picture="@drawable/sample_image_1"
+                app:title="Apples" />
+
+            <ru.impression.ui_generator_example.TitledPictureComponent
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                app:picture="@drawable/sample_image_2"
+                app:title="Flower" />
+
+        </LinearLayout>
+
+        <ru.impression.ui_generator_example.CounterComponent
+            count="@={viewModel.count}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.animate()}"
-            android:text="Animate" />
+            android:layout_marginTop="32dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="Current time is:" />
+            android:text="Current time is:"
+            android:textStyle="bold" />
 
         <FrameLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -66,7 +75,7 @@
                 tools:text="12345" />
 
             <ProgressBar
-                isVisible="@{viewModel.currentTimeIsLoading}"
+                isInvisible="@{!viewModel.currentTimeIsLoading}"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center" />
@@ -76,6 +85,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:onClick="@{() -> viewModel.reloadCurrentTime()}"
             android:text="reload" />
 

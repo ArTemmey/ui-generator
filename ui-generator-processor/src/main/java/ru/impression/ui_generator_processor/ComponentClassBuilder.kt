@@ -18,7 +18,7 @@ abstract class ComponentClassBuilder(
     protected val viewModelClass: TypeMirror
 ) {
 
-    protected val bindableProperties = ArrayList<BindableProperty>().apply {
+    protected val propProperties = ArrayList<PropProperty>().apply {
         val viewModelEnclosedElements =
             (viewModelClass as DeclaredType).asElement().enclosedElements
         viewModelEnclosedElements.forEach { viewModelElement ->
@@ -32,7 +32,7 @@ abstract class ComponentClassBuilder(
                 }
                 val propertyType = (propertyGetter as ExecutableElement).returnType
                 add(
-                    BindableProperty(
+                    PropProperty(
                         propertyName,
                         capitalizedPropertyName,
                         propertyType,
@@ -85,7 +85,7 @@ abstract class ComponentClassBuilder(
 
     abstract fun TypeSpec.Builder.addRestMembers()
 
-    protected class BindableProperty(
+    protected class PropProperty(
         val name: String,
         val capitalizedName: String,
         val type: TypeMirror,

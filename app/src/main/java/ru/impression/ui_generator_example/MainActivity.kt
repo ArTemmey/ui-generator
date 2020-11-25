@@ -2,7 +2,6 @@ package ru.impression.ui_generator_example
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import ru.impression.ui_generator_example.fragment.MainFragmentComponent
 
 class MainActivity : AppCompatActivity() {
 

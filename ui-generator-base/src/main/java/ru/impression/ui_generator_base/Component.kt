@@ -40,18 +40,14 @@ interface Component<C, VM : ComponentViewModel> {
     }
 
     fun startObservations() {
-        viewModel.setOnStateChangedListener(boundLifecycleOwner) { render() }
-        for (viewModelAndProperties in viewModel.sharedProperties) {
-            if (viewModelAndProperties.key.findAnnotation<SharedViewModel>() == null) continue
-            val sourceViewModel = createViewModel(viewModelAndProperties.key)
-            sourceViewModel.addOnPropertyChangedListener(
-                boundLifecycleOwner,
-                { property, value ->
-                    viewModelAndProperties.value[property]?.forEach { it.set(viewModel, value) }
-                }
-            )
-        }
+        viewModel.setListeners(
+            boundLifecycleOwner,
+            onStateChanged = { render() },
+            onTwoWayPropChanged = ::onTwoWayPropChanged
+        )
     }
+
+    fun onTwoWayPropChanged(propertyName: String) = Unit
 
     fun render(immediately: Boolean = true, attachToContainer: Boolean = true): ViewDataBinding? {
         viewModel.hasMissedStateChange = false

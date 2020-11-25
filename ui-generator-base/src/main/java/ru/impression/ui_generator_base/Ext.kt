@@ -11,7 +11,9 @@ import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import ru.impression.ui_generator_annotations.Prop
-import kotlin.reflect.*
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
@@ -30,8 +32,8 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
         try {
             propertyLoop@ for (property in viewModel::class.declaredMemberProperties) {
                 val propAnnotation = property.findAnnotation<Prop>() ?: continue
-                if (property is KMutableProperty<*> && propAnnotation.attr != -1)
-                    property.set(
+                if (property is KMutableProperty1<*, *> && propAnnotation.attr != -1)
+                    (property as KMutableProperty1<Any?, Any?>).set(
                         viewModel,
                         when (property.returnType.classifier) {
                             Boolean::class -> getBoolean(
@@ -62,24 +64,19 @@ internal fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
     attachToRoot: Boolean
 ) = (component.container as? ViewGroup).let {
+    val context =
+        (component as? Fragment)?.context ?: (component as? View)?.context ?: return@let null
     try {
         (java.getDeclaredMethod(
             "inflate",
             LayoutInflater::class.java,
             ViewGroup::class.java,
             Boolean::class.javaPrimitiveType
-        ).invoke(
-            null,
-            LayoutInflater.from(
-                (component as? Fragment)?.context ?: (component as? View)?.context
-                ?: return@let null
-            ),
-            it,
-            attachToRoot
-        ) as ViewDataBinding).apply {
+        ).invoke(null, LayoutInflater.from(context), it, attachToRoot) as ViewDataBinding).apply {
             this.lifecycleOwner = component.boundLifecycleOwner
-            setComponent(component)
             setViewModel(component.viewModel)
+            safeCallSetter("setComponent", component)
+            safeCallSetter("setContext", context)
         }
     } catch (e: NoSuchMethodException) {
         null
@@ -94,33 +91,27 @@ internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
     }
 }
 
-internal fun ViewDataBinding.setComponent(component: Component<*, *>) {
+internal fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
     this::class.java.declaredMethods.firstOrNull {
         val parameterTypes = it.parameterTypes
-        it.name == "setComponent"
+        it.name == setterName
                 && parameterTypes.size == 1
-                && parameterTypes[0].isAssignableFrom(component::class.java)
-    }?.invoke(this, component)
+                && parameterTypes[0].isAssignableFrom(data::class.java)
+    }?.invoke(this, data)
 }
 
-fun KProperty<*>.get(receiver: Any?) =
-    when (this) {
-        is KProperty0<*> -> get()
-        is KProperty1<*, *> -> (this as KProperty1<Any?, Any?>).get(receiver)
-        else -> throw UnsupportedOperationException("Unsupported property")
-    }
-
-fun KMutableProperty<*>.set(receiver: Any?, value: Any?) {
+fun <T> KMutableProperty0<T>.safeSetProp(value: T?) {
     if (!this.returnType.isMarkedNullable && value == null) return
-    when (this) {
-        is KMutableProperty0<*> -> (this as KMutableProperty0<Any?>).set(value)
-        is KMutableProperty1<*, *> -> (this as KMutableProperty1<Any?, Any?>).set(receiver, value)
-    }
+    set(value as T, true)
+}
+
+fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
+    getDelegateFromSum<StateDelegate<StateParent, T>>()
+        ?.setValue(this, value, renderImmediately)
 }
 
 val KMutableProperty0<*>.isLoading: Boolean
     get() = getDelegateFromSum<StateDelegate<*, *>>()?.isLoading == true
-
 
 fun KMutableProperty0<*>.reload() {
     getDelegateFromSum<StateDelegate<*, *>>()?.load(true)

@@ -180,25 +180,6 @@ class MyTextView : ComponentScheme<TextView, MyTextViewModel>({
 })
 ```
 
-### 4. Shared state
-
-Suppose you need to observe in one ViewModel changes of the property of another ViewModel. Here's how you do it:
-```kotlin
-@SharedViewModel
-class MySharedViewModel : ComponentViewModel() {
-    var sharedText by observable<String?>(null)
-}
-
-class MyPlainViewModel : ComponentViewModel() {
-    var myText by observable<String?>(null) { print(it) }
-    init {
-        // when changing the value of `sharedText`, this value will be set to `myText`
-        ::myText.isMutableBy(MySharedViewModel::sharedText)
-    }
-}
-```
-A ViewModel with a shared property is marked with `SharedViewModel` annotation, and the shared property is declared by the `observable` or `state` delegate. Then, in the observing ViewModel, in the initial block, using `isMutableBy` method, it is indicated which property values will be duplicated to your property (your property must be a var).
-
 ### 5. Coroutine support
 
 Suppose that before you display some data, you need to load it first. Here's how you do it:
