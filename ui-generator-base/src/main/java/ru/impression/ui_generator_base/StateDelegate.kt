@@ -13,10 +13,10 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
 open class StateDelegate<R : StateParent, T>(
-    private val parent: R,
+    val parent: R,
     initialValue: T,
-    private val getInitialValue: (suspend () -> T)?,
-    private val onChanged: ((T) -> Unit)?
+    val getInitialValue: (suspend () -> T)?,
+    val onChanged: ((T) -> Unit)?
 ) : ReadWriteProperty<R, T> {
 
     @Volatile
