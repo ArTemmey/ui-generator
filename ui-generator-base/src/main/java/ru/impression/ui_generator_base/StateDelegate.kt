@@ -20,10 +20,12 @@ open class StateDelegate<R : StateParent, T>(
 ) : ReadWriteProperty<R, T> {
 
     @Volatile
-    private var value = initialValue
+    var value = initialValue
+        private set
 
     @Volatile
-    internal var isLoading = false
+    var isLoading = false
+        private set
 
     @Volatile
     private var loadJob: Job? = null
