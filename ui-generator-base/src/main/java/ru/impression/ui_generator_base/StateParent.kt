@@ -1,5 +1,5 @@
 package ru.impression.ui_generator_base
 
-interface StateParent {
+public interface StateParent {
     fun onStateChanged(renderImmediately: Boolean = false)
 }
