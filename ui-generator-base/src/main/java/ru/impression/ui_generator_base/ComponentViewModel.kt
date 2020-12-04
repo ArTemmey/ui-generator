@@ -12,8 +12,8 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 
-abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(),
-    StateParent, LifecycleEventObserver {
+abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateParent,
+    LifecycleEventObserver {
 
     private var boundLifecycleOwner: LifecycleOwner? = null
 
