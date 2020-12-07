@@ -51,7 +51,7 @@ class ViewComponentClassBuilder(
         addSuperclassConstructorParameter("context")
         addSuperclassConstructorParameter("attrs")
         addSuperclassConstructorParameter("defStyleAttr")
-        addProperty(buildLifecycleRegistryProperty())
+        addProperty(buildLifecycleProperty())
         addProperty(buildIsDetachedFromWindowProperty())
         propProperties.forEach {
             if (it.twoWay) addProperty(buildAttrChangedProperty(it))
@@ -80,15 +80,15 @@ class ViewComponentClassBuilder(
         build()
     }
 
-    private fun buildLifecycleRegistryProperty() =
+    private fun buildLifecycleProperty() =
         with(
             PropertySpec.builder(
-                "lifecycleRegistry",
-                ClassName("androidx.lifecycle", "LifecycleRegistry")
+                "lifecycle",
+                ClassName("ru.impression.ui_generator_base", "SimpleLifecycle")
             )
         ) {
             addModifiers(KModifier.PRIVATE)
-            initializer("%T(this)", ClassName("androidx.lifecycle", "LifecycleRegistry"))
+            initializer("%T(this)", ClassName("ru.impression.ui_generator_base", "SimpleLifecycle"))
             build()
         }
 
@@ -127,7 +127,7 @@ class ViewComponentClassBuilder(
 
     private fun buildGetLifecycleFunction() = with(FunSpec.builder("getLifecycle")) {
         addModifiers(KModifier.OVERRIDE)
-        addCode("return lifecycleRegistry")
+        addCode("return lifecycle")
         build()
     }
 
@@ -164,7 +164,7 @@ class ViewComponentClassBuilder(
         addCode(
             """
                 super.onAttachedToWindow()
-                lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_CREATE)
+                lifecycle.handleLifecycleEvent(%T.Event.ON_CREATE)
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
                   startObservations()
@@ -181,7 +181,7 @@ class ViewComponentClassBuilder(
             addCode(
                 """
                     super.onDetachedFromWindow()
-                    lifecycleRegistry.handleLifecycleEvent(%T.Event.ON_DESTROY)
+                    lifecycle.handleLifecycleEvent(%T.Event.ON_DESTROY)
                     viewModel.onCleared()
                     isDetachedFromWindow = true
                     """.trimIndent(),

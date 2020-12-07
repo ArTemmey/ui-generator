@@ -3,9 +3,7 @@ package ru.impression.ui_generator_base
 import android.view.View
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.*
 import ru.impression.ui_generator_annotations.SharedViewModel
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
