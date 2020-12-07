@@ -106,7 +106,7 @@ fun <T> KMutableProperty0<T>.safeSetProp(value: T?) {
 }
 
 fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
-    getDelegateFromSum<StateDelegate<StateParent, T>>()
+    getDelegateFromSum<StateDelegate<StateOwner, T>>()
         ?.setValue(this, value, renderImmediately)
 }
 

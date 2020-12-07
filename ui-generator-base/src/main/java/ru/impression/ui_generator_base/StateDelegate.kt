@@ -12,7 +12,7 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
-open class StateDelegate<R : StateParent, T>(
+open class StateDelegate<R : StateOwner, T>(
     val parent: R,
     initialValue: T,
     val getInitialValue: (suspend () -> T)?,

@@ -7,12 +7,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
-import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty
 
-abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateParent,
+abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
     private var boundLifecycleOwner: LifecycleOwner? = null
