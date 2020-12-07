@@ -14,6 +14,7 @@ import ru.impression.ui_generator_annotations.Prop
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
@@ -30,29 +31,28 @@ val View.activity: AppCompatActivity?
 fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {
         try {
-            propertyLoop@ for (property in viewModel::class.declaredMemberProperties) {
-                val propAnnotation = property.findAnnotation<Prop>() ?: continue
-                if (property is KMutableProperty1<*, *> && propAnnotation.attr != -1)
-                    (property as KMutableProperty1<Any?, Any?>).set(
-                        viewModel,
-                        when (property.returnType.classifier) {
-                            Boolean::class -> getBoolean(
-                                propAnnotation.attr,
-                                property.get(viewModel) as Boolean? ?: false
-                            )
-                            Int::class -> getInt(
-                                propAnnotation.attr,
-                                property.get(viewModel) as Int? ?: 0
-                            )
-                            Float::class -> getFloat(
-                                propAnnotation.attr,
-                                property.get(viewModel) as Float? ?: 0f
-                            )
-                            String::class -> getString(propAnnotation.attr)
-                            Drawable::class -> getDrawable(propAnnotation.attr)
-                            else -> continue@propertyLoop
-                        }
-                    )
+            for (delegateToAttr in viewModel.delegateToAttrs) {
+                val property = delegateToAttr.key.getProperty()
+                (property as KMutableProperty1<Any?, Any?>).set(
+                    viewModel,
+                    when (property.returnType.classifier) {
+                        Boolean::class -> getBoolean(
+                            delegateToAttr.value,
+                            property.get(viewModel) as Boolean? ?: false
+                        )
+                        Int::class -> getInt(
+                            delegateToAttr.value,
+                            property.get(viewModel) as Int? ?: 0
+                        )
+                        Float::class -> getFloat(
+                            delegateToAttr.value,
+                            property.get(viewModel) as Float? ?: 0f
+                        )
+                        String::class -> getString(delegateToAttr.value)
+                        Drawable::class -> getDrawable(delegateToAttr.value)
+                        else -> continue
+                    }
+                )
             }
         } finally {
             recycle()
@@ -99,6 +99,12 @@ internal fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
                 && parameterTypes[0].isAssignableFrom(data::class.java)
     }?.invoke(this, data)
 }
+
+fun <R : StateOwner, T> StateDelegate<R, T>.getProperty() =
+    (parent::class.declaredMemberProperties.firstOrNull {
+        (it as? KProperty1<R, *>)
+            ?.getDelegateFromSum<R, StateDelegate<*, *>>(parent) == this
+    } as KMutableProperty1<R, T>?)
 
 fun <T> KMutableProperty0<T>.safeSetProp(value: T?) {
     if (!this.returnType.isMarkedNullable && value == null) return

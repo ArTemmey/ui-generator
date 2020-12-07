@@ -35,7 +35,7 @@ open class StateDelegate<R : StateOwner, T>(
     }
 
     @Synchronized
-    internal fun load(notifyStateChangedBeforeLoading: Boolean) {
+    fun load(notifyStateChangedBeforeLoading: Boolean) {
         getInitialValue ?: return
         if (parent !is CoroutineScope) return
         loadJob?.cancel()
@@ -58,7 +58,7 @@ open class StateDelegate<R : StateOwner, T>(
     }
 
     @Synchronized
-    internal fun setValue(
+    fun setValue(
         property: KProperty<*>,
         value: T,
         renderImmediately: Boolean = false
@@ -71,10 +71,7 @@ open class StateDelegate<R : StateOwner, T>(
     }
 
     @Synchronized
-    private fun setValueToProperty(value: T) {
-        (parent::class.declaredMemberProperties.firstOrNull {
-            (it as? KProperty1<R, *>)
-                ?.getDelegateFromSum<R, StateDelegate<*, *>>(parent) == this
-        } as KMutableProperty1<R, T>?)?.set(parent, value)
+    fun setValueToProperty(value: T) {
+        getProperty()?.set(parent, value)
     }
 }

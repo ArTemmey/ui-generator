@@ -3,7 +3,6 @@ package ru.impression.ui_generator_example
 import android.graphics.drawable.Drawable
 import android.widget.FrameLayout
 import ru.impression.ui_generator_annotations.MakeComponent
-import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.ComponentViewModel
 import ru.impression.ui_generator_example.databinding.TitledPictureBinding
@@ -12,13 +11,11 @@ import ru.impression.ui_generator_example.databinding.TitledPictureBinding
 class TitledPicture :
     ComponentScheme<FrameLayout, TitledPictureViewModel>({ TitledPictureBinding::class })
 
-class TitledPictureViewModel : ComponentViewModel(R.styleable.TextAndImageBlockComponent) {
+class TitledPictureViewModel : ComponentViewModel(attrs = R.styleable.TextAndImageBlockComponent) {
 
-    @Prop(attr = R.styleable.TextAndImageBlockComponent_title)
-    var title by state<String?>(null)
+    var title by state<String?>(null, attr = R.styleable.TextAndImageBlockComponent_title)
 
-    @Prop(attr = R.styleable.TextAndImageBlockComponent_picture)
-    var picture by state<Drawable?>(null)
+    var picture by state<Drawable?>(null, attr = R.styleable.TextAndImageBlockComponent_picture)
 
     var toastMessage by state<String?>(null)
 

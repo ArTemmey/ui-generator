@@ -23,7 +23,9 @@ abstract class ComponentClassBuilder(
             (viewModelClass as DeclaredType).asElement().enclosedElements
         viewModelEnclosedElements.forEach { viewModelElement ->
             viewModelElement.getAnnotation(Prop::class.java)?.let { annotation ->
-                val propertyName = viewModelElement.toString().substringBefore('$')
+                var propertyName = viewModelElement.toString().substringBefore('$')
+                if (propertyName.contains("get")) propertyName =
+                    propertyName.replace("get", "").decapitalize(Locale.getDefault())
                 val capitalizedPropertyName = propertyName.substring(0, 1)
                     .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
                 val propertyGetter = viewModelEnclosedElements.first {

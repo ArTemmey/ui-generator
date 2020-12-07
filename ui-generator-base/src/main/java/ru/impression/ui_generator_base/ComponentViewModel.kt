@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModel
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
+    internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
+
     private var boundLifecycleOwner: LifecycleOwner? = null
 
     private val handler = Handler(Looper.getMainLooper())
@@ -25,14 +27,14 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal var hasMissedStateChange = false
 
-    protected fun <T> state(initialValue: T, onChanged: ((T) -> Unit)? = null) =
+    protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, initialValue, null, onChanged)
+            .also { delegate -> attr?.let { delegateToAttrs[delegate] = it } }
 
     @CallSuper
     override fun onStateChanged(renderImmediately: Boolean) {
         callOnStateChangedListener(renderImmediately)
     }
-
 
     fun setListeners(
         owner: LifecycleOwner,
