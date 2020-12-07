@@ -27,6 +27,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal var hasMissedStateChange = false
 
+    private val outerOnStateChangedListeners = HashSet<(renderImmediately: Boolean) -> Unit>()
+
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, initialValue, null, onChanged)
             .also { delegate -> attr?.let { delegateToAttrs[delegate] = it } }
@@ -34,6 +36,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     @CallSuper
     override fun onStateChanged(renderImmediately: Boolean) {
         callOnStateChangedListener(renderImmediately)
+        outerOnStateChangedListeners.forEach { it(renderImmediately) }
     }
 
     fun setListeners(
@@ -71,6 +74,14 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         handler.removeCallbacks(onStateChangedListenerCaller)
         boundLifecycleOwner?.lifecycle?.removeObserver(this)
         boundLifecycleOwner = null
+    }
+
+    fun addOnStateChangedListener(listener: (renderImmediately: Boolean) -> Unit) {
+        outerOnStateChangedListeners.add(listener)
+    }
+
+    fun removeOnStateChangedListener(listener: (renderImmediately: Boolean) -> Unit) {
+        outerOnStateChangedListeners.remove(listener)
     }
 
     final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
