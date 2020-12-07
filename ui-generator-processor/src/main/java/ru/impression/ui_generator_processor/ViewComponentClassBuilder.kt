@@ -215,8 +215,9 @@ class ViewComponentClassBuilder(
                 """
                     if (value === view.viewModel.${propProperty.name}) return
                     view.viewModel::${propProperty.name}.%M(value)
+                    view.viewModel.onStateChanged(renderImmediately = true)
                 """.trimIndent(),
-                MemberName("ru.impression.ui_generator_base", "safeSetProp")
+                MemberName("ru.impression.ui_generator_base", "nullSafetySet")
             )
             build()
         }

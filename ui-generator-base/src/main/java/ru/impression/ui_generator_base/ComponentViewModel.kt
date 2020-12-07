@@ -7,6 +7,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
+import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
+import kotlin.reflect.KMutableProperty0
 
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
@@ -94,4 +96,9 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
 
     public override fun onCleared() = Unit
+
+    fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
+        set(value)
+        onStateChanged(renderImmediately)
+    }
 }

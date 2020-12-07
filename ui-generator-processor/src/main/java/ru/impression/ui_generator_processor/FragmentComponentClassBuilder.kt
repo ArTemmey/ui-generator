@@ -35,9 +35,10 @@ class FragmentComponentClassBuilder(
                             """
                                 if (${it.name} != null && ${it.name} !== viewModel.${it.name})
                                   viewModel::${it.name}.%M(${it.name})
-                                  
+                                  viewModel.onStateChanged(renderImmediately = true)
+
                                   """.trimIndent(),
-                            MemberName("ru.impression.ui_generator_base", "safeSetProp")
+                            MemberName("ru.impression.ui_generator_base", "nullSafetySet")
                         )
                     }
                     add(

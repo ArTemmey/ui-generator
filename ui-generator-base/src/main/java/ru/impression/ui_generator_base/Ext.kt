@@ -106,14 +106,9 @@ fun <R : StateOwner, T> StateDelegate<R, T>.getProperty() =
             ?.getDelegateFromSum<R, StateDelegate<*, *>>(parent) == this
     } as KMutableProperty1<R, T>?)
 
-fun <T> KMutableProperty0<T>.safeSetProp(value: T?) {
+fun <T> KMutableProperty0<T>.nullSafetySet(value: T?) {
     if (!this.returnType.isMarkedNullable && value == null) return
-    set(value as T, true)
-}
-
-fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
-    set(value)
-    getDelegateFromSum<StateDelegate<StateOwner, T>>()?.parent?.onStateChanged(renderImmediately)
+    set(value as T)
 }
 
 val KMutableProperty0<*>.isLoading: Boolean
