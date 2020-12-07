@@ -164,11 +164,11 @@ class ViewComponentClassBuilder(
         addCode(
             """
                 super.onAttachedToWindow()
-                lifecycle.handleLifecycleEvent(%T.Event.ON_CREATE)
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
                   startObservations()
                 }
+                lifecycle.handleLifecycleEvent(%T.Event.ON_CREATE)
                 """.trimIndent(),
             ClassName("androidx.lifecycle", "Lifecycle")
         )
