@@ -47,3 +47,23 @@ fun View.updateLayoutParams(
         else
             layoutParams ?: ViewGroup.LayoutParams(width ?: WRAP_CONTENT, height ?: WRAP_CONTENT)
 }
+
+fun <T : Any> View.updateTag(
+    key: Int,
+    existenceCondition: Boolean,
+    create: () -> T,
+    update: ((T) -> Unit)? = null,
+    onRemoved: ((T) -> Unit)? = null
+) {
+    val oldTag = getTag(key) as T?
+    if (oldTag == null && existenceCondition) {
+        setTag(key, create().apply { update?.let { it(this) } })
+    } else if (oldTag != null) {
+        if (!existenceCondition) {
+            setTag(key, null)
+            onRemoved?.invoke(oldTag)
+        } else {
+            update?.invoke(oldTag)
+        }
+    }
+}
