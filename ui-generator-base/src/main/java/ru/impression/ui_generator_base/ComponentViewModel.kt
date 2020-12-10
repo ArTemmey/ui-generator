@@ -15,7 +15,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal var componentHasMissedStateChange = false
 
-    private val stateObservers = HashMap<LifecycleOwner, () -> Unit>()
+    private val stateObservers = HashMap<LifecycleOwner, HashSet<() -> Unit>>()
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -48,7 +48,9 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     fun addStateObserver(lifecycleOwner: LifecycleOwner, observer: () -> Unit) {
         fun addActual() {
-            stateObservers[lifecycleOwner] = observer
+            val set = stateObservers[lifecycleOwner]
+                ?: HashSet<() -> Unit>().also { stateObservers[lifecycleOwner] = it }
+            set.add(observer)
             lifecycleOwner.lifecycle.addObserver(this)
         }
         if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED))
@@ -67,7 +69,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     }
 
-    private fun removeStateObserver(lifecycleOwner: LifecycleOwner) {
+    private fun removeStateObservers(lifecycleOwner: LifecycleOwner) {
         stateObservers.remove(lifecycleOwner)
         lifecycleOwner.lifecycle.removeObserver(this)
     }
@@ -76,7 +78,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         handler.removeCallbacks(stateObserversNotifier)
         if (immediately && Thread.currentThread() === Looper.getMainLooper().thread) {
             component?.render() ?: run { componentHasMissedStateChange = true }
-            stateObservers.values.forEach { it() }
+            stateObservers.values.forEach { set -> set.forEach { it() } }
         } else {
             handler.post(stateObserversNotifier)
         }
@@ -90,7 +92,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         if (source === component?.boundLifecycleOwner) onLifecycleEvent(event)
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             if (source === component?.boundLifecycleOwner) unsetComponent()
-            removeStateObserver(source)
+            removeStateObservers(source)
         }
     }
 
