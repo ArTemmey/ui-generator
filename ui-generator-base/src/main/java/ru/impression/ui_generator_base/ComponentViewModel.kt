@@ -3,10 +3,7 @@ package ru.impression.ui_generator_base
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.CallSuper
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import kotlin.reflect.KMutableProperty0
 
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
@@ -18,7 +15,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal var componentHasMissedStateChange = false
 
-    private val outerStateObservers = HashMap<LifecycleOwner, () -> Unit>()
+    private val stateObservers = HashMap<LifecycleOwner, () -> Unit>()
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -49,13 +46,29 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         component = null
     }
 
-    fun addOuterStateObserver(lifecycleOwner: LifecycleOwner, stateObserver: () -> Unit) {
-        outerStateObservers[lifecycleOwner] = stateObserver
-        lifecycleOwner.lifecycle.addObserver(this)
+    fun addStateObserver(lifecycleOwner: LifecycleOwner, observer: () -> Unit) {
+        fun addActual() {
+            stateObservers[lifecycleOwner] = observer
+            lifecycleOwner.lifecycle.addObserver(this)
+        }
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED))
+            addActual()
+        else
+            lifecycleOwner.lifecycle.addObserver(
+                object : LifecycleEventObserver {
+                    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                        if (source == lifecycleOwner && event == Lifecycle.Event.ON_CREATE) {
+                            addActual()
+                            lifecycleOwner.lifecycle.removeObserver(this)
+                        }
+                    }
+                }
+            )
+
     }
 
-    private fun removeOuterStateObserver(lifecycleOwner: LifecycleOwner) {
-        outerStateObservers.remove(lifecycleOwner)
+    private fun removeStateObserver(lifecycleOwner: LifecycleOwner) {
+        stateObservers.remove(lifecycleOwner)
         lifecycleOwner.lifecycle.removeObserver(this)
     }
 
@@ -63,7 +76,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         handler.removeCallbacks(stateObserversNotifier)
         if (immediately && Thread.currentThread() === Looper.getMainLooper().thread) {
             component?.render() ?: run { componentHasMissedStateChange = true }
-            outerStateObservers.values.forEach { it() }
+            stateObservers.values.forEach { it() }
         } else {
             handler.post(stateObserversNotifier)
         }
@@ -77,7 +90,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         if (source === component?.boundLifecycleOwner) onLifecycleEvent(event)
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
             if (source === component?.boundLifecycleOwner) unsetComponent()
-            removeOuterStateObserver(source)
+            removeStateObserver(source)
         }
     }
 

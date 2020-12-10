@@ -120,7 +120,7 @@ fun KMutableProperty0<*>.reload() {
 
 fun ViewDataBinding.bindViewModel(lifecycleOwner: LifecycleOwner, viewModel: ComponentViewModel) {
     setViewModel(viewModel)
-    viewModel.addOuterStateObserver(lifecycleOwner) {
+    viewModel.addStateObserver(lifecycleOwner) {
         setViewModel(viewModel)
         executePendingBindings()
     }

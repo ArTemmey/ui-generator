@@ -7,22 +7,22 @@ import androidx.lifecycle.LifecycleOwner
 
 class SimpleLifecycle(private val owner: LifecycleOwner) : Lifecycle() {
 
-    private var observer: LifecycleEventObserver? = null
-
     private var state = State.INITIALIZED
 
+    private val observers = HashSet<LifecycleEventObserver>()
+
     override fun addObserver(observer: LifecycleObserver) {
-        if (this.observer == null && observer is LifecycleEventObserver) this.observer = observer
+        observers.add(observer as? LifecycleEventObserver ?: return)
     }
 
     override fun removeObserver(observer: LifecycleObserver) {
-        if (this.observer === observer) this.observer = null
+        observers.remove(observer as? LifecycleEventObserver ?: return)
     }
 
     override fun getCurrentState() = state
 
     fun handleLifecycleEvent(event: Event) {
         state = event.targetState
-        observer?.onStateChanged(owner, event)
+        observers.forEach { it.onStateChanged(owner, event) }
     }
 }
