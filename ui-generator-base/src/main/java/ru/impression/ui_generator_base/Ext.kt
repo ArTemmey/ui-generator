@@ -118,9 +118,9 @@ fun KMutableProperty0<*>.reload() {
     getDelegateFromSum<StateDelegate<*, *>>()?.load(true)
 }
 
-fun ViewDataBinding.bindViewModel(lifecycleOwner: LifecycleOwner, viewModel: ComponentViewModel) {
+fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel) {
     setViewModel(viewModel)
-    viewModel.addStateObserver(lifecycleOwner) {
+    viewModel.addStateObserver(lifecycleOwner ?: return) {
         setViewModel(viewModel)
         executePendingBindings()
     }

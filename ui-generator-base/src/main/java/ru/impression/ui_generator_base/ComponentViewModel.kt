@@ -19,9 +19,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private val stateObserversNotifier = Runnable {
-        notifyStateObservers(true)
-    }
+    private val stateObserversNotifier = Runnable { notifyStateObservers(true) }
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, initialValue, null, onChanged)
@@ -84,7 +82,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         }
     }
 
-    fun notifyTwoWayPropChanged(propertyName: String) {
+    internal fun notifyTwoWayPropChanged(propertyName: String) {
         component?.onTwoWayPropChanged(propertyName)
     }
 
@@ -96,11 +94,11 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         }
     }
 
-    open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
+    protected open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
 
     public override fun onCleared() = Unit
 
-    fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
+    protected fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
         set(value)
         onStateChanged(renderImmediately)
     }
