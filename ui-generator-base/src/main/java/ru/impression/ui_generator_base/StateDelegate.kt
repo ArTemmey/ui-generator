@@ -3,13 +3,9 @@ package ru.impression.ui_generator_base
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
 open class StateDelegate<R : StateOwner, T>(
@@ -66,7 +62,7 @@ open class StateDelegate<R : StateOwner, T>(
         this.value = value
         parent.onStateChanged(renderImmediately)
         if (property.findAnnotation<Prop>()?.twoWay == true)
-            (parent as? ComponentViewModel)?.callOnTwoWayPropChangedListener(property.name)
+            (parent as? ComponentViewModel)?.notifyTwoWayPropChanged(property.name)
         onChanged?.invoke(value)
     }
 

@@ -9,14 +9,14 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
-import ru.impression.ui_generator_annotations.Prop
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.findAnnotation
 
 val View.activity: AppCompatActivity?
     get() {
@@ -95,8 +95,8 @@ internal fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
     this::class.java.declaredMethods.firstOrNull {
         val parameterTypes = it.parameterTypes
         it.name == setterName
-                && parameterTypes.size == 1
-                && parameterTypes[0].isAssignableFrom(data::class.java)
+            && parameterTypes.size == 1
+            && parameterTypes[0].isAssignableFrom(data::class.java)
     }?.invoke(this, data)
 }
 
@@ -116,4 +116,34 @@ val KMutableProperty0<*>.isLoading: Boolean
 
 fun KMutableProperty0<*>.reload() {
     getDelegateFromSum<StateDelegate<*, *>>()?.load(true)
+}
+
+fun ViewDataBinding.bindViewModel(lifecycleOwner: LifecycleOwner, viewModel: ComponentViewModel) {
+    setViewModel(viewModel)
+    viewModel.addOuterStateObserver(lifecycleOwner) {
+        setViewModel(viewModel)
+        executePendingBindings()
+    }
+}
+
+fun View.toLifecycleOwner() = object : LifecycleOwner {
+
+    private val lifecycle = SimpleLifecycle(this)
+
+    init {
+        addOnAttachStateChangeListener(
+            object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View?) {
+                    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+                }
+
+                override fun onViewDetachedFromWindow(v: View?) {
+                    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+
+                }
+            }
+        )
+    }
+
+    override fun getLifecycle() = lifecycle
 }

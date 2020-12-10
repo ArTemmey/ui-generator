@@ -37,18 +37,10 @@ interface Component<C, VM : ComponentViewModel> {
         }
     }
 
-    fun startObservations() {
-        viewModel.setListeners(
-            boundLifecycleOwner,
-            onStateChanged = { render() },
-            onTwoWayPropChanged = ::onTwoWayPropChanged
-        )
-    }
-
     fun onTwoWayPropChanged(propertyName: String) = Unit
 
     fun render(immediately: Boolean = true, attachToContainer: Boolean = true): ViewDataBinding? {
-        viewModel.hasMissedStateChange = false
+        viewModel.componentHasMissedStateChange = false
         return renderer.render(
             scheme.getBindingClass?.invoke(this as C, viewModel),
             immediately,

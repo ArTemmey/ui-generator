@@ -118,7 +118,7 @@ class ViewComponentClassBuilder(
             """
                 %M(attrs)
                 render(false)
-                startObservations()
+                viewModel.setComponent(this)
                 """.trimIndent(),
             MemberName("ru.impression.ui_generator_base", "resolveAttrs")
         )
@@ -166,7 +166,7 @@ class ViewComponentClassBuilder(
                 super.onAttachedToWindow()
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
-                  startObservations()
+                  viewModel.setComponent(this)
                 }
                 lifecycle.handleLifecycleEvent(%T.Event.ON_CREATE)
                 """.trimIndent(),

@@ -7,7 +7,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
-import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import kotlin.reflect.KMutableProperty0
 
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
@@ -15,21 +14,17 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
 
-    private var boundLifecycleOwner: LifecycleOwner? = null
+    private var component: Component<*, *>? = null
+
+    internal var componentHasMissedStateChange = false
+
+    private val outerStateObservers = HashMap<LifecycleOwner, () -> Unit>()
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var onStateChanged: (() -> Unit)? = null
-
-    private var onTwoWayPropChanged: ((propertyName: String) -> Unit)? = null
-
-    private val onStateChangedListenerCaller = Runnable {
-        callOnStateChangedListener(true)
+    private val stateObserversNotifier = Runnable {
+        notifyStateObservers(true)
     }
-
-    internal var hasMissedStateChange = false
-
-    private val outerOnStateChangedListeners = HashSet<(renderImmediately: Boolean) -> Unit>()
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, initialValue, null, onChanged)
@@ -37,60 +32,53 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     @CallSuper
     override fun onStateChanged(renderImmediately: Boolean) {
-        callOnStateChangedListener(renderImmediately)
-        outerOnStateChangedListeners.forEach { it(renderImmediately) }
+        notifyStateObservers(renderImmediately)
     }
 
-    fun setListeners(
-        owner: LifecycleOwner,
-        onStateChanged: () -> Unit,
-        onTwoWayPropChanged: (propertyName: String) -> Unit
-    ) {
-        this.onStateChanged = onStateChanged
-        this.onTwoWayPropChanged = onTwoWayPropChanged
-        boundLifecycleOwner = owner
-        owner.lifecycle.addObserver(this)
-        if (hasMissedStateChange) {
-            hasMissedStateChange = false
+    fun setComponent(component: Component<*, *>) {
+        this.component = component
+        component.boundLifecycleOwner.lifecycle.addObserver(this)
+        if (componentHasMissedStateChange) {
+            componentHasMissedStateChange = false
             onStateChanged()
         }
     }
 
-    private fun callOnStateChangedListener(renderImmediately: Boolean) {
-        onStateChanged?.let {
-            handler.removeCallbacks(onStateChangedListenerCaller)
-            if (renderImmediately && Thread.currentThread() === Looper.getMainLooper().thread)
-                it()
-            else
-                handler.post(onStateChangedListenerCaller)
-        } ?: run { hasMissedStateChange = true }
+    private fun unsetComponent() {
+        component?.boundLifecycleOwner?.lifecycle?.removeObserver(this)
+        component = null
     }
 
-    fun callOnTwoWayPropChangedListener(propertyName: String) {
-        onTwoWayPropChanged?.invoke(propertyName)
+    fun addOuterStateObserver(lifecycleOwner: LifecycleOwner, stateObserver: () -> Unit) {
+        outerStateObservers[lifecycleOwner] = stateObserver
+        lifecycleOwner.lifecycle.addObserver(this)
     }
 
-    private fun removeListeners() {
-        onStateChanged = null
-        onTwoWayPropChanged = null
-        handler.removeCallbacks(onStateChangedListenerCaller)
-        boundLifecycleOwner?.lifecycle?.removeObserver(this)
-        boundLifecycleOwner = null
+    private fun removeOuterStateObserver(lifecycleOwner: LifecycleOwner) {
+        outerStateObservers.remove(lifecycleOwner)
+        lifecycleOwner.lifecycle.removeObserver(this)
     }
 
-    fun addOnStateChangedListener(listener: (renderImmediately: Boolean) -> Unit) {
-        outerOnStateChangedListeners.add(listener)
+    private fun notifyStateObservers(immediately: Boolean) {
+        handler.removeCallbacks(stateObserversNotifier)
+        if (immediately && Thread.currentThread() === Looper.getMainLooper().thread) {
+            component?.render() ?: run { componentHasMissedStateChange = true }
+            outerStateObservers.values.forEach { it() }
+        } else {
+            handler.post(stateObserversNotifier)
+        }
     }
 
-    fun removeOnStateChangedListener(listener: (renderImmediately: Boolean) -> Unit) {
-        outerOnStateChangedListeners.remove(listener)
+    fun notifyTwoWayPropChanged(propertyName: String) {
+        component?.onTwoWayPropChanged(propertyName)
     }
 
     final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        val boundLifecycleOwner = boundLifecycleOwner
-        if (source !== boundLifecycleOwner) return
-        onLifecycleEvent(event)
-        if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) removeListeners()
+        if (source === component?.boundLifecycleOwner) onLifecycleEvent(event)
+        if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
+            if (source === component?.boundLifecycleOwner) unsetComponent()
+            removeOuterStateObserver(source)
+        }
     }
 
     open fun onLifecycleEvent(event: Lifecycle.Event) = Unit

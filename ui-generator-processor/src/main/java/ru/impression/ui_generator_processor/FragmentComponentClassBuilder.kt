@@ -113,7 +113,7 @@ class FragmentComponentClassBuilder(
         
         """.trimIndent()
         )
-        addCode("startObservations()")
+        addCode("viewModel.setComponent(this)")
         build()
     }
 
