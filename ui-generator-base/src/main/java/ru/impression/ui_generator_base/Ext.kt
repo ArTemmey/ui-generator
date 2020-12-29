@@ -114,7 +114,7 @@ fun <T> KMutableProperty0<T>.nullSafetySet(value: T?) {
 val KMutableProperty0<*>.isLoading: Boolean
     get() = getDelegateFromSum<StateDelegate<*, *>>()?.isLoading == true
 
-fun KMutableProperty0<*>.reload() {
+suspend fun KMutableProperty0<*>.reload() {
     getDelegateFromSum<StateDelegate<*, *>>()?.load(true)
 }
 
