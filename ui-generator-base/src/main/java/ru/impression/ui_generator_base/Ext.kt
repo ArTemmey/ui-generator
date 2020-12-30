@@ -11,6 +11,7 @@ import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import kotlinx.coroutines.Job
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
@@ -114,9 +115,8 @@ fun <T> KMutableProperty0<T>.nullSafetySet(value: T?) {
 val KMutableProperty0<*>.isLoading: Boolean
     get() = getDelegateFromSum<StateDelegate<*, *>>()?.isLoading == true
 
-fun KMutableProperty0<*>.reload() {
-    getDelegateFromSum<StateDelegate<*, *>>()?.load(true)
-}
+fun KMutableProperty0<*>.reload(): Job =
+    getDelegateFromSum<StateDelegate<*, *>>()!!.load(true)
 
 fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel) {
     setViewModel(viewModel)

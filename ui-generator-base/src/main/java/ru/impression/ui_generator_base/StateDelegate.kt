@@ -27,22 +27,20 @@ open class StateDelegate<R : StateOwner, T>(
     private var loadJob: Job? = null
 
     init {
-        load(false)
+        if (getInitialValue != null) load(false)
     }
 
     @Synchronized
-    fun load(notifyStateChangedBeforeLoading: Boolean) {
-        getInitialValue ?: return
-        if (parent !is CoroutineScope) return
+    fun load(notifyStateChangedBeforeLoading: Boolean): Job {
         loadJob?.cancel()
         isLoading = true
         if (notifyStateChangedBeforeLoading) parent.onStateChanged()
-        loadJob = parent.launch {
-            val result = getInitialValue.invoke()
+        return (parent as CoroutineScope).launch {
+            val result = getInitialValue!!.invoke()
             isLoading = false
             setValueToProperty(result)
             loadJob = null
-        }
+        }.also { loadJob = it }
     }
 
     @Synchronized
