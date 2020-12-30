@@ -2,7 +2,6 @@ package ru.impression.ui_generator_example
 
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
@@ -34,6 +33,6 @@ class MainFragmentViewModel : CoroutineViewModel() {
     val currentTimeIsLoading get() = ::currentTime.isLoading
 
     fun reloadCurrentTime() {
-        launch { ::currentTime.reload() }
+        ::currentTime.reload()
     }
 }

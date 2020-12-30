@@ -1,6 +1,7 @@
 package ru.impression.ui_generator_base
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
@@ -22,18 +23,26 @@ open class StateDelegate<R : StateOwner, T>(
     var isLoading = false
         private set
 
+    @Volatile
+    private var loadJob: Job? = null
+
     init {
-        if (getInitialValue != null)
-            (parent as? CoroutineScope)?.launch { load(false) }
+        load(false)
     }
 
-    suspend fun load(notifyStateChangedBeforeLoading: Boolean) {
+    @Synchronized
+    fun load(notifyStateChangedBeforeLoading: Boolean) {
         getInitialValue ?: return
+        if (parent !is CoroutineScope) return
+        loadJob?.cancel()
         isLoading = true
         if (notifyStateChangedBeforeLoading) parent.onStateChanged()
-        val result = getInitialValue.invoke()
-        isLoading = false
-        setValueToProperty(result)
+        loadJob = parent.launch {
+            val result = getInitialValue.invoke()
+            isLoading = false
+            setValueToProperty(result)
+            loadJob = null
+        }
     }
 
     @Synchronized
