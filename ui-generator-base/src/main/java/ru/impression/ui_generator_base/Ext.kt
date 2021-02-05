@@ -61,7 +61,7 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     }
 }
 
-internal fun KClass<out ViewDataBinding>.inflate(
+fun KClass<out ViewDataBinding>.inflate(
     component: Component<*, *>,
     attachToRoot: Boolean
 ) = (component.container as? ViewGroup).let {
@@ -84,15 +84,20 @@ internal fun KClass<out ViewDataBinding>.inflate(
     }
 }
 
-internal fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel) {
-    try {
-        this::class.java.getDeclaredMethod("setViewModel", viewModel::class.java)
-            .invoke(this, viewModel)
-    } catch (e: NoSuchMethodException) {
-    }
+fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
+    val method = viewModel
+        ?.let {
+            try {
+                this::class.java.getDeclaredMethod("setViewModel", it::class.java)
+            } catch (e: NoSuchMethodException) {
+                null
+            }
+        }
+        ?: this::class.java.declaredMethods.firstOrNull { it.name == "setViewModel" }
+    method?.invoke(this, viewModel)
 }
 
-internal fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
+fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
     this::class.java.declaredMethods.firstOrNull {
         val parameterTypes = it.parameterTypes
         it.name == setterName
@@ -118,9 +123,9 @@ val KMutableProperty0<*>.isLoading: Boolean
 fun KMutableProperty0<*>.reload(): Job =
     getDelegateFromSum<StateDelegate<*, *>>()!!.load(true)
 
-fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel) {
+fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel?) {
     setViewModel(viewModel)
-    viewModel.addStateObserver(lifecycleOwner ?: return) {
+    viewModel?.addStateObserver(lifecycleOwner ?: return) {
         setViewModel(viewModel)
         executePendingBindings()
     }
