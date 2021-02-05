@@ -1,5 +1,6 @@
 package ru.impression.ui_generator_base
 
+import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
@@ -29,7 +30,7 @@ val View.activity: AppCompatActivity?
         return contextWrapper
     }
 
-fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
+internal fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {
         try {
             for (delegateToAttr in viewModel.delegateToAttrs) {
@@ -61,28 +62,17 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     }
 }
 
-fun KClass<out ViewDataBinding>.inflate(
-    component: Component<*, *>,
-    attachToRoot: Boolean
-) = (component.container as? ViewGroup).let {
-    val context =
-        (component as? Fragment)?.context ?: (component as? View)?.context ?: return@let null
+fun KClass<out ViewDataBinding>.inflate(context: Context, root: ViewGroup?, attachToRoot: Boolean) =
     try {
         (java.getDeclaredMethod(
             "inflate",
             LayoutInflater::class.java,
             ViewGroup::class.java,
             Boolean::class.javaPrimitiveType
-        ).invoke(null, LayoutInflater.from(context), it, attachToRoot) as ViewDataBinding).apply {
-            this.lifecycleOwner = component.boundLifecycleOwner
-            setViewModel(component.viewModel)
-            safeCallSetter("setComponent", component)
-            safeCallSetter("setContext", context)
-        }
+        ).invoke(null, LayoutInflater.from(context), root, attachToRoot) as? ViewDataBinding)
     } catch (e: NoSuchMethodException) {
         null
     }
-}
 
 fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
     val method = viewModel
