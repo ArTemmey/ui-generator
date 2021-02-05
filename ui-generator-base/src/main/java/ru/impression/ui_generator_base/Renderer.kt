@@ -8,7 +8,9 @@ import kotlin.reflect.KClass
 
 class Renderer(private val component: Component<*, *>) {
 
-    private val context = (component as? Fragment)?.context ?: (component as? View)?.context
+    private val context by lazy {
+        (component as? Fragment)?.context ?: (component as? View)?.context
+    }
 
     private var currentBinding: ViewDataBinding? = null
 
