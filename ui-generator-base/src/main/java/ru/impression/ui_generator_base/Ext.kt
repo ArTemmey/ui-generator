@@ -30,7 +30,7 @@ val View.activity: AppCompatActivity?
         return contextWrapper
     }
 
-internal fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
+fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {
         try {
             for (delegateToAttr in viewModel.delegateToAttrs) {
