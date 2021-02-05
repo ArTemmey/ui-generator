@@ -93,16 +93,17 @@ fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
                 null
             }
         }
-        ?: this::class.java.declaredMethods.firstOrNull { it.name == "setViewModel" }
+        ?: this::class.java.declaredMethods
+            .firstOrNull { it.name == "setViewModel" && it.parameterTypes.size == 1 }
     method?.invoke(this, viewModel)
 }
 
-fun ViewDataBinding.safeCallSetter(setterName: String, data: Any) {
+fun ViewDataBinding.safeCallSetter(setterName: String, data: Any?) {
     this::class.java.declaredMethods.firstOrNull {
         val parameterTypes = it.parameterTypes
         it.name == setterName
             && parameterTypes.size == 1
-            && parameterTypes[0].isAssignableFrom(data::class.java)
+            && if (data != null) parameterTypes[0].isAssignableFrom(data::class.java) else true
     }?.invoke(this, data)
 }
 
