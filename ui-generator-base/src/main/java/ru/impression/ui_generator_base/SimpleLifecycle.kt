@@ -5,13 +5,14 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.CopyOnWriteArraySet
 
 class SimpleLifecycle(private val owner: LifecycleOwner) : Lifecycle() {
 
     @Volatile
     private var state = State.INITIALIZED
 
-    private val observers = ConcurrentSkipListSet<LifecycleEventObserver>()
+    private val observers = CopyOnWriteArraySet<LifecycleEventObserver>()
 
     override fun addObserver(observer: LifecycleObserver) {
         observers.add(observer as? LifecycleEventObserver ?: return)
