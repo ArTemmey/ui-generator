@@ -4,28 +4,27 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import java.util.concurrent.ConcurrentSkipListSet
 
 class SimpleLifecycle(private val owner: LifecycleOwner) : Lifecycle() {
 
     @Volatile
     private var state = State.INITIALIZED
 
-    private val observers = HashSet<LifecycleEventObserver>()
-
-    private val lock = Any()
+    private val observers = ConcurrentSkipListSet<LifecycleEventObserver>()
 
     override fun addObserver(observer: LifecycleObserver) {
-        synchronized(lock) { observers.add(observer as? LifecycleEventObserver ?: return) }
+        observers.add(observer as? LifecycleEventObserver ?: return)
     }
 
     override fun removeObserver(observer: LifecycleObserver) {
-        synchronized(lock) { observers.remove(observer as? LifecycleEventObserver ?: return) }
+        observers.remove(observer as? LifecycleEventObserver ?: return)
     }
 
     override fun getCurrentState() = state
 
     fun handleLifecycleEvent(event: Event) {
         state = event.targetState
-        synchronized(lock) { observers.forEach { it.onStateChanged(owner, event) } }
+        observers.forEach { it.onStateChanged(owner, event) }
     }
 }
