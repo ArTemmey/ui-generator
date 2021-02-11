@@ -167,6 +167,7 @@ class ViewComponentClassBuilder(
                 if (isDetachedFromWindow) {
                   isDetachedFromWindow = false
                   viewModel.setComponent(this)
+                  viewModel.restoreSubscriptions()
                 }
                 lifecycle.handleLifecycleEvent(%T.Event.ON_CREATE)
                 """.trimIndent(),

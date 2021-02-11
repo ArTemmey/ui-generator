@@ -21,8 +21,10 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     private val stateObserversNotifier = Runnable { notifyStateObservers(true) }
 
+    private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
+
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
-        StateDelegate(this, initialValue, null, onChanged)
+        StateDelegate(this, initialValue, onChanged)
             .also { delegate -> attr?.let { delegateToAttrs[delegate] = it } }
 
     @CallSuper
@@ -42,6 +44,15 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private fun unsetComponent() {
         component?.boundLifecycleOwner?.lifecycle?.removeObserver(this)
         component = null
+    }
+
+    fun initSubscriptions(block: () -> Unit) {
+        block()
+        subscriptionsInitializers.add(block)
+    }
+
+    fun restoreSubscriptions() {
+        subscriptionsInitializers.forEach { it() }
     }
 
     fun addStateObserver(lifecycleOwner: LifecycleOwner, observer: () -> Unit) {

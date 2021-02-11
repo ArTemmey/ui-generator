@@ -2,6 +2,8 @@ package ru.impression.ui_generator_base
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
@@ -11,8 +13,9 @@ import kotlin.reflect.full.findAnnotation
 open class StateDelegate<R : StateOwner, T>(
     val parent: R,
     initialValue: T,
-    val getInitialValue: (suspend () -> T)?,
-    val onChanged: ((T) -> Unit)?
+    val onChanged: ((T) -> Unit)?,
+    val loadValue: (suspend () -> T)? = null,
+    val valueFlow: Flow<T>? = null
 ) : ReadWriteProperty<R, T> {
 
     @Volatile
@@ -27,7 +30,10 @@ open class StateDelegate<R : StateOwner, T>(
     private var loadJob: Job? = null
 
     init {
-        if (getInitialValue != null) load(false)
+        when {
+            loadValue != null -> load(false)
+            valueFlow != null -> collectValueFlow()
+        }
     }
 
     @Synchronized
@@ -36,11 +42,22 @@ open class StateDelegate<R : StateOwner, T>(
         isLoading = true
         if (notifyStateChangedBeforeLoading) parent.onStateChanged()
         return (parent as CoroutineScope).launch {
-            val result = getInitialValue!!.invoke()
+            val result = loadValue!!.invoke()
             isLoading = false
             setValueToProperty(result)
             loadJob = null
         }.also { loadJob = it }
+    }
+
+    private fun collectValueFlow() {
+        isLoading = true
+        fun collect() = (parent as CoroutineScope).launch {
+            valueFlow!!.collect {
+                isLoading = false
+                setValueToProperty(it)
+            }
+        }
+        (parent as? ComponentViewModel)?.initSubscriptions(::collect) ?: collect()
     }
 
     @Synchronized

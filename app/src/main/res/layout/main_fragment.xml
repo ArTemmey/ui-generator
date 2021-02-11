@@ -10,85 +10,108 @@
 
     </data>
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
         <ru.impression.ui_generator_example.ToastShowerComponent
             message="@={viewModel.toastMessage}"
             android:layout_width="0dp"
             android:layout_height="0dp" />
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <ProgressBar
+            isVisible="@{viewModel.countDownIsLoading}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@{viewModel.welcomeText}"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:orientation="horizontal">
-
-            <ru.impression.ui_generator_example.TitledPictureComponent
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:picture="@drawable/sample_image_1"
-                app:title="Apples" />
-
-            <ru.impression.ui_generator_example.TitledPictureComponent
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                app:picture="@drawable/sample_image_2"
-                app:title="Flower" />
-
-        </LinearLayout>
-
-        <ru.impression.ui_generator_example.CounterComponent
-            count="@={viewModel.count}"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp" />
+            android:layout_gravity="center" />
 
         <TextView
+            isVisible="@{!viewModel.countDownIsLoading &amp;&amp; viewModel.countDown > 0}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="Current time is:"
-            android:textStyle="bold" />
+            android:layout_gravity="center"
+            android:text="@{String.valueOf(viewModel.countDown)}"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="3..2..1" />
 
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
+        <LinearLayout
+            isVisible="@{!viewModel.countDownIsLoading &amp;&amp; viewModel.countDown == 0}"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.welcomeText}"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="horizontal">
+
+                <ru.impression.ui_generator_example.TitledPictureComponent
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:picture="@drawable/sample_image_1"
+                    app:title="Apples" />
+
+                <ru.impression.ui_generator_example.TitledPictureComponent
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    app:picture="@drawable/sample_image_2"
+                    app:title="Flower" />
+
+            </LinearLayout>
+
+            <ru.impression.ui_generator_example.CounterComponent
+                count="@={viewModel.count}"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@{viewModel.currentTime}"
-                tools:text="12345" />
+                android:layout_marginTop="32dp"
+                android:text="Current time is:"
+                android:textStyle="bold" />
 
-            <ProgressBar
-                isInvisible="@{!viewModel.currentTimeIsLoading}"
+            <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center" />
+                android:layout_marginTop="8dp">
 
-        </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@{viewModel.currentTime}"
+                    tools:text="12345" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:onClick="@{() -> viewModel.reloadCurrentTime()}"
-            android:text="reload" />
+                <ProgressBar
+                    isInvisible="@{!viewModel.currentTimeIsLoading}"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center" />
 
-    </LinearLayout>
+            </FrameLayout>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:onClick="@{() -> viewModel.reloadCurrentTime()}"
+                android:text="reload" />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
 </layout>
