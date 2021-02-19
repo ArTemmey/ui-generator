@@ -2,6 +2,7 @@ package ru.impression.ui_generator_base
 
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
 import kotlin.reflect.KMutableProperty0
@@ -106,6 +107,10 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     protected open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
+
+    open fun onSaveInstanceState(): Parcelable? = null
+
+    open fun onRestoreInstanceState(savedInstanceState: Parcelable?) = Unit
 
     public override fun onCleared() = Unit
 

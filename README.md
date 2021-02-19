@@ -114,22 +114,20 @@ As you can see, the codes for the Fragment and for the View are completely ident
 
 **Note:** you may need to build the project twice so that the binding adapters and component classes are generated correctly.
 
-Also, in the case of a View, you can set `Prop.twoWay = true`, and then a two-way binding adapter will be generated for the View. It will send the value back when the annotated property changes.
+Also, in the case of a View:
+- You can set `Prop.twoWay = true`, and then a two-way binding adapter will be generated for the View. It will send the value back when the annotated property changes.
 ```kotlin
 @Prop(twoWay = true)
 var twoWayText: String? = null //a two-way binding adapter will be generated
 ```
-
-And in the case of Fragments, you can pass callbacks to them:
+- You can bind xml attribute to your state property:
 ```kotlin
-// ChildFragmentViewModel.kt
-@Prop
-var callback: (() -> Unit)? = null
-
-// ChildFragment's parent Fragment
-showFragment(ChildFragmentComponent().apply { callback = this@ParentFragment.viewModel.childFragmentCallback })
+var picture by state<Drawable?>(null, attr = R.styleable.MyViewComponent_picture)
 ```
-But keep in mind that the source value of the callback must be in the ViewModel  so that the callback does not refer to a Fragment or View.
+```xml
+<MyViewComponent
+	app:picture="@drawable/myPicture"/>
+```
 
 ### 2. Observable state
 
@@ -182,6 +180,8 @@ class MyTextView : ComponentScheme<TextView, MyTextViewModel>({
 
 ### 5. Coroutine support
 
+#### suspend funs
+
 Suppose that before you display some data, you need to load it first. Here's how you do it:
 ```kotlin
 var greeting: String? by state({
@@ -210,6 +210,22 @@ fun reloadGreeting() {
     // After that, the data binding will be called and the ProgressBar wil be shown again at loading time.
     ::greeting.reload()
 }
+```
+
+#### Flows
+
+Suppose you need to subscribe to the Flow and display all its elements. Here's how you do it:
+```kotlin
+var countDown: Int? by state(flow {
+    delay(1000)
+        emit(3)
+        delay(1000)
+        emit(2)
+        delay(1000)
+        emit(1)
+        delay(1000)
+        emit(0)
+})
 ```
 
 ***For detailed examples see module `app`.***

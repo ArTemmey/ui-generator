@@ -33,6 +33,7 @@ class FragmentComponentClassBuilder(
                     propProperties.forEach {
                         add(
                             """
+                                val ${it.name} = ${it.name}
                                 if (${it.name} != null && ${it.name} !== viewModel.${it.name})
                                   viewModel::${it.name}.%M(${it.name})
                                   viewModel.onStateChanged(renderImmediately = true)
@@ -73,19 +74,51 @@ class FragmentComponentClassBuilder(
 
     override fun TypeSpec.Builder.addRestMembers() {
         propProperties.forEach { addProperty(buildPropWrapperProperty(it)) }
+        addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())
         addFunction(buildOnActivityCreatedFunction())
+        addFunction(buildOnSaveInstanceStateFunction())
         addFunction(buildOnDestroyViewFunction())
     }
 
     private fun buildPropWrapperProperty(propProperty: PropProperty) = with(
         PropertySpec.builder(
             propProperty.name,
-            propProperty.type.asTypeName().javaToKotlinType().copy(true)
+            propProperty.kotlinType
         )
     ) {
         mutable(true)
         initializer("null")
+        getter(
+            FunSpec.getterBuilder()
+                .addCode(
+                    """
+                        return field ?: arguments?.get("${propProperty.name}") as? ${propProperty.kotlinType}
+                    
+                    """.trimIndent()
+                )
+                .build()
+        )
+        setter(
+            FunSpec.setterBuilder().addParameter("value", propProperty.kotlinType).addCode(
+                """
+                    field = value
+                    %M("${propProperty.name}", value)
+                """.trimIndent(),
+                MemberName("ru.impression.ui_generator_base", "putArgument")
+            ).build()
+        )
+        build()
+    }
+
+    private fun buildOnCreateFunction() = with(FunSpec.builder("onCreate")) {
+        addModifiers(KModifier.OVERRIDE)
+        addParameter("savedInstanceState", ClassName("android.os", "Bundle").copy(true))
+        addCode(
+            """
+                super.onCreate(savedInstanceState)
+                viewModel.onRestoreInstanceState(savedInstanceState?.getParcelable("viewModelState"))""".trimIndent()
+        )
         build()
     }
 
@@ -110,10 +143,21 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 super.onActivityCreated(savedInstanceState)
-        
-        """.trimIndent()
+                viewModel.setComponent(this)
+                """.trimIndent()
         )
-        addCode("viewModel.setComponent(this)")
+        build()
+    }
+
+    private fun buildOnSaveInstanceStateFunction() = with(FunSpec.builder("onSaveInstanceState")) {
+        addModifiers(KModifier.OVERRIDE)
+        addParameter("outState", ClassName("android.os", "Bundle"))
+        addCode(
+            """
+                super.onSaveInstanceState(outState)
+                outState.putParcelable("viewModelState", viewModel.onSaveInstanceState())
+                """.trimIndent()
+        )
         build()
     }
 

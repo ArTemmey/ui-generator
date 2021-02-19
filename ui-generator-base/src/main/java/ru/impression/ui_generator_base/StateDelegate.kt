@@ -60,7 +60,6 @@ open class StateDelegate<R : StateOwner, T>(
         (parent as? ComponentViewModel)?.initSubscriptions(::collect) ?: collect()
     }
 
-    @Synchronized
     override fun getValue(thisRef: R, property: KProperty<*>) = value
 
     @Synchronized

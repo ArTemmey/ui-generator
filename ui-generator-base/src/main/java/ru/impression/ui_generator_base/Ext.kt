@@ -3,11 +3,13 @@ package ru.impression.ui_generator_base
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
+import android.os.Bundle
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -29,6 +31,11 @@ val View.activity: AppCompatActivity?
         }
         return contextWrapper
     }
+
+fun Fragment.putArgument(key: String, value: Any?) {
+    val arguments = arguments ?: Bundle().also { arguments = it }
+    arguments.putAll(bundleOf(key to value))
+}
 
 fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {

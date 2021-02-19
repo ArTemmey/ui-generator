@@ -93,5 +93,7 @@ abstract class ComponentClassBuilder(
         val type: TypeMirror,
         val twoWay: Boolean,
         val attrChangedPropertyName: String
-    )
+    ) {
+        val kotlinType = type.asTypeName().javaToKotlinType().copy(true)
+    }
 }

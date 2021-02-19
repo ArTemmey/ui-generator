@@ -62,6 +62,8 @@ class ViewComponentClassBuilder(
             addFunction(buildOnTwoWayPropChangedFunction())
         addFunction(buildOnAttachedToWindowFunction())
         addFunction(buildOnDetachedFromWindowFunction())
+        addFunction(buildOnSaveInstanceStateFunction())
+        addFunction(buildOnRestoreInstanceStateFunction())
         addType(buildCompanionObject())
     }
 
@@ -187,6 +189,34 @@ class ViewComponentClassBuilder(
                     isDetachedFromWindow = true
                     """.trimIndent(),
                 ClassName("androidx.lifecycle", "Lifecycle")
+            )
+            build()
+        }
+
+    private fun buildOnSaveInstanceStateFunction() = with(FunSpec.builder("onSaveInstanceState")) {
+        addModifiers(KModifier.OVERRIDE)
+        returns(ClassName("android.os", "Parcelable").copy(true))
+        addCode(
+            """
+                return %T(super.onSaveInstanceState(), viewModel.onSaveInstanceState())
+                
+                """.trimIndent(),
+            ClassName("ru.impression.ui_generator_base", "SavedViewState")
+        )
+        build()
+    }
+
+    private fun buildOnRestoreInstanceStateFunction() =
+        with(FunSpec.builder("onRestoreInstanceState")) {
+            addModifiers(KModifier.OVERRIDE)
+            addParameter("state", ClassName("android.os", "Parcelable").copy(true))
+            addCode(
+                """
+                super.onRestoreInstanceState((state as? %T)?.superState)
+                viewModel.onRestoreInstanceState((state as? %T)?.viewModelState)
+                """.trimIndent(),
+                ClassName("ru.impression.ui_generator_base", "SavedViewState"),
+                ClassName("ru.impression.ui_generator_base", "SavedViewState")
             )
             build()
         }
