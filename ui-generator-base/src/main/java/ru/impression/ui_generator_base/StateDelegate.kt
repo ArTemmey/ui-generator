@@ -44,7 +44,7 @@ open class StateDelegate<R : StateOwner, T>(
         return (parent as CoroutineScope).launch {
             val result = loadValue!!.invoke()
             isLoading = false
-            setValueToProperty(result)
+            setValue(result)
             loadJob = null
         }.also { loadJob = it }
     }
@@ -54,7 +54,7 @@ open class StateDelegate<R : StateOwner, T>(
         fun collect() = (parent as CoroutineScope).launch {
             valueFlow!!.collect {
                 isLoading = false
-                setValueToProperty(it)
+                setValue(it)
             }
         }
         (parent as? ComponentViewModel)?.initSubscriptions(::collect) ?: collect()
@@ -64,24 +64,18 @@ open class StateDelegate<R : StateOwner, T>(
 
     @Synchronized
     override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
-        setValue(property, value)
+        setValue(value, property)
     }
 
     @Synchronized
     fun setValue(
-        property: KProperty<*>,
         value: T,
-        renderImmediately: Boolean = false
+        property: KProperty<*>? = getProperty()
     ) {
         this.value = value
-        parent.onStateChanged(renderImmediately)
-        if (property.findAnnotation<Prop>()?.twoWay == true)
+        parent.onStateChanged()
+        if (property?.findAnnotation<Prop>()?.twoWay == true)
             (parent as? ComponentViewModel)?.notifyTwoWayPropChanged(property.name)
         onChanged?.invoke(value)
-    }
-
-    @Synchronized
-    fun setValueToProperty(value: T) {
-        getProperty()?.set(parent, value)
     }
 }
