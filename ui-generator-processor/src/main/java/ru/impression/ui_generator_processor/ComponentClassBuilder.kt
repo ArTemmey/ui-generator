@@ -56,7 +56,7 @@ abstract class ComponentClassBuilder(
         addProperty(buildViewModelProperty())
         addProperty(buildContainerProperty())
         addProperty(buildBoundLifecycleOwnerProperty())
-        addProperty(buildRendererProperty())
+        addProperty(buildDataBindingManagerProperty())
         addRestMembers()
         build()
     }
@@ -74,14 +74,14 @@ abstract class ComponentClassBuilder(
 
     protected abstract fun buildBoundLifecycleOwnerProperty(): PropertySpec
 
-    private fun buildRendererProperty() = with(
+    private fun buildDataBindingManagerProperty() = with(
         PropertySpec.builder(
-            "renderer",
-            ClassName("ru.impression.ui_generator_base", "Renderer")
+            "dataBindingManager",
+            ClassName("ru.impression.ui_generator_base", "DataBindingManager")
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("Renderer(this)")
+        initializer("DataBindingManager(this)")
         build()
     }
 

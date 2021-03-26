@@ -5,10 +5,9 @@ import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.ComponentViewModel
-import ru.impression.ui_generator_example.databinding.CounterBinding
 
 @MakeComponent
-class Counter : ComponentScheme<FrameLayout, CounterViewModel>({ CounterBinding::class })
+class Counter : ComponentScheme<FrameLayout, CounterViewModel>({ R.layout.counter })
 
 class CounterViewModel : ComponentViewModel() {
 

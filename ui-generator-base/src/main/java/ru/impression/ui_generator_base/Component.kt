@@ -20,7 +20,7 @@ interface Component<C, VM : ComponentViewModel> {
 
     val boundLifecycleOwner: LifecycleOwner
 
-    val renderer: Renderer
+    val dataBindingManager: DataBindingManager
 
     fun <T : ComponentViewModel> createViewModel(viewModelClass: KClass<T>): T {
         val activity = when (this) {
@@ -41,8 +41,8 @@ interface Component<C, VM : ComponentViewModel> {
 
     fun render(immediately: Boolean = true, attachToContainer: Boolean = true): ViewDataBinding? {
         viewModel.componentHasMissedStateChange = false
-        return renderer.render(
-            scheme.getBindingClass?.invoke(this as C, viewModel),
+        return dataBindingManager.updateBinding(
+            scheme.render?.invoke(this as C, viewModel),
             immediately,
             attachToContainer
         )

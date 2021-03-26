@@ -16,6 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Job
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KMutableProperty1
@@ -95,13 +96,14 @@ fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
     method?.invoke(this, viewModel)
 }
 
-fun ViewDataBinding.safeCallSetter(setterName: String, data: Any?) {
+fun ViewDataBinding.setVariable(name: String, value: Any?) {
+    val setterName = "set${name.capitalize(Locale.getDefault())}"
     this::class.java.declaredMethods.firstOrNull {
         val parameterTypes = it.parameterTypes
         it.name == setterName
-            && parameterTypes.size == 1
-            && if (data != null) parameterTypes[0].isAssignableFrom(data::class.java) else true
-    }?.invoke(this, data)
+                && parameterTypes.size == 1
+                && if (value != null) parameterTypes[0].isAssignableFrom(value::class.java) else true
+    }?.invoke(this, value)
 }
 
 fun <R : StateOwner, T> StateDelegate<R, T>.getProperty() =
@@ -129,24 +131,4 @@ fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel?) {
     }
 }
 
-fun View.toLifecycleOwner() = object : LifecycleOwner {
-
-    private val lifecycle = SimpleLifecycle(this)
-
-    init {
-        addOnAttachStateChangeListener(
-            object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View?) {
-                    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-                }
-
-                override fun onViewDetachedFromWindow(v: View?) {
-                    lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-
-                }
-            }
-        )
-    }
-
-    override fun getLifecycle() = lifecycle
-}
+fun View.asLifecycleOwner() = ViewLifecycleOwner(this)

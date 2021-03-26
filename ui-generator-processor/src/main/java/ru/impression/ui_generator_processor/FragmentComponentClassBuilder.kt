@@ -103,9 +103,13 @@ class FragmentComponentClassBuilder(
             FunSpec.setterBuilder().addParameter("value", propProperty.kotlinType).addCode(
                 """
                     field = value
-                    %M("${propProperty.name}", value)
+                    try {
+                      %M("${propProperty.name}", value)
+                    } catch (e: %T) {
+                    }
                 """.trimIndent(),
-                MemberName("ru.impression.ui_generator_base", "putArgument")
+                MemberName("ru.impression.ui_generator_base", "putArgument"),
+                IllegalArgumentException::class.java
             ).build()
         )
         build()
@@ -166,7 +170,7 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 super.onDestroyView()
-                renderer.release()
+                dataBindingManager.releaseBinding()
                 """.trimIndent()
         )
         build()

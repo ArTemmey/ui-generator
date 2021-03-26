@@ -5,11 +5,10 @@ import android.widget.FrameLayout
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.ComponentViewModel
-import ru.impression.ui_generator_example.databinding.TitledPictureBinding
 
 @MakeComponent
 class TitledPicture :
-    ComponentScheme<FrameLayout, TitledPictureViewModel>({ TitledPictureBinding::class })
+    ComponentScheme<FrameLayout, TitledPictureViewModel>({ R.layout.titled_picture })
 
 class TitledPictureViewModel : ComponentViewModel(attrs = R.styleable.TextAndImageBlockComponent) {
 
