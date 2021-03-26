@@ -22,8 +22,8 @@ class DataBindingManager(private val component: Component<*, *>) {
 
     internal fun updateBinding(
         newLayoutResId: Int?,
-        executeBindingsImmediately: Boolean,
-        attachToContainer: Boolean
+        attachToContainer: Boolean,
+        executeBindingsImmediately: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newLayoutResId != null && newLayoutResId == currentLayoutResId) {
@@ -38,7 +38,7 @@ class DataBindingManager(private val component: Component<*, *>) {
             ?.also {
                 currentBinding = it
                 currentLayoutResId = newLayoutResId
-                onBindingCreated(attachToContainer)
+                onBindingCreated(attachToContainer, executeBindingsImmediately)
             }
         return currentBinding
     }
@@ -61,9 +61,12 @@ class DataBindingManager(private val component: Component<*, *>) {
         if (executeBindings) executePendingBindings()
     }
 
-    private fun onBindingCreated(attachedToContainer: Boolean) {
+    private fun onBindingCreated(
+        attachedToContainer: Boolean,
+        executeBindingsImmediately: Boolean
+    ) {
         if (attachedToContainer)
-            component.render(true)
+            component.render(executeBindingsImmediately)
         else
             handler.post { component.render(true) }
     }
