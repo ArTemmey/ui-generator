@@ -41,14 +41,14 @@ interface Component<C, VM : ComponentViewModel> {
 
     fun render(
         attachToContainer: Boolean = true,
-        updateViewModel: Boolean = true,
+        rebindViewModel: Boolean = true,
         executeBindingsImmediately: Boolean = true,
     ): ViewDataBinding? {
         viewModel.componentHasMissedStateChange = false
         return dataBindingManager.updateBinding(
             scheme.render?.invoke(this as C, viewModel),
             attachToContainer,
-            updateViewModel,
+            rebindViewModel,
             executeBindingsImmediately
         )
     }

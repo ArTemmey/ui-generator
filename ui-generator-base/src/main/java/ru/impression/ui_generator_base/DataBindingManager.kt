@@ -23,12 +23,12 @@ class DataBindingManager(private val component: Component<*, *>) {
     internal fun updateBinding(
         newLayoutResId: Int?,
         attachToContainer: Boolean,
-        updateViewModel: Boolean = true,
+        rebindViewModel: Boolean = true,
         executeBindingsImmediately: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newLayoutResId != null && newLayoutResId == currentLayoutResId) {
-                if (updateViewModel) {
+                if (rebindViewModel) {
                     it.setViewModel(component.viewModel)
                     if (executeBindingsImmediately) it.executePendingBindings()
                 }
@@ -70,13 +70,13 @@ class DataBindingManager(private val component: Component<*, *>) {
     ) {
         if (attachedToContainer)
             component.render(
-                updateViewModel = false,
+                rebindViewModel = false,
                 executeBindingsImmediately = executeBindingsImmediately
             )
         else
             handler.post {
                 component.render(
-                    updateViewModel = false,
+                    rebindViewModel = false,
                     executeBindingsImmediately = executeBindingsImmediately
                 )
             }
