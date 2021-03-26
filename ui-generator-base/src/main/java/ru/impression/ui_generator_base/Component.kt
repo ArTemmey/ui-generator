@@ -40,13 +40,15 @@ interface Component<C, VM : ComponentViewModel> {
     fun onTwoWayPropChanged(propertyName: String) = Unit
 
     fun render(
-        executeBindingsImmediately: Boolean,
-        attachToContainer: Boolean = true
+        attachToContainer: Boolean = true,
+        updateViewModel: Boolean = true,
+        executeBindingsImmediately: Boolean = true,
     ): ViewDataBinding? {
         viewModel.componentHasMissedStateChange = false
         return dataBindingManager.updateBinding(
             scheme.render?.invoke(this as C, viewModel),
             attachToContainer,
+            updateViewModel,
             executeBindingsImmediately
         )
     }

@@ -119,7 +119,7 @@ class ViewComponentClassBuilder(
         addStatement(
             """
                 %M(attrs)
-                render(false)
+                render(executeBindingsImmediately = false)
                 viewModel.setComponent(this)
                 """.trimIndent(),
             MemberName("ru.impression.ui_generator_base", "resolveAttrs")

@@ -23,12 +23,15 @@ class DataBindingManager(private val component: Component<*, *>) {
     internal fun updateBinding(
         newLayoutResId: Int?,
         attachToContainer: Boolean,
+        updateViewModel: Boolean = true,
         executeBindingsImmediately: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newLayoutResId != null && newLayoutResId == currentLayoutResId) {
-                it.setViewModel(component.viewModel)
-                if (executeBindingsImmediately) it.executePendingBindings()
+                if (updateViewModel) {
+                    it.setViewModel(component.viewModel)
+                    if (executeBindingsImmediately) it.executePendingBindings()
+                }
                 return it
             }
             (component.container as? ViewGroup)?.removeAllViews()
@@ -66,9 +69,17 @@ class DataBindingManager(private val component: Component<*, *>) {
         executeBindingsImmediately: Boolean
     ) {
         if (attachedToContainer)
-            component.render(executeBindingsImmediately)
+            component.render(
+                updateViewModel = false,
+                executeBindingsImmediately = executeBindingsImmediately
+            )
         else
-            handler.post { component.render(true) }
+            handler.post {
+                component.render(
+                    updateViewModel = false,
+                    executeBindingsImmediately = executeBindingsImmediately
+                )
+            }
     }
 
     fun releaseBinding() {

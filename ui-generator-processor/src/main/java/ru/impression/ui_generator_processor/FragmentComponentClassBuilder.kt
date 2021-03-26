@@ -135,7 +135,7 @@ class FragmentComponentClassBuilder(
         addCode(
             """
                 this.container = container
-                return render(false, false)?.root
+                return render(attachToContainer = false, executeBindingsImmediately = false)?.root
                 """.trimIndent()
         )
         build()

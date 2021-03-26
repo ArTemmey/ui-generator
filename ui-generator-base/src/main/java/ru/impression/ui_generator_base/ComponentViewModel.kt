@@ -87,7 +87,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private fun notifyStateObservers(immediately: Boolean) {
         handler.removeCallbacks(stateObserversNotifier)
         if (immediately && Thread.currentThread() === Looper.getMainLooper().thread) {
-            component?.render(true) ?: run { componentHasMissedStateChange = true }
+            component?.render(executeBindingsImmediately = true)
+                ?: run { componentHasMissedStateChange = true }
             stateObservers.values.forEach { set -> set.forEach { it() } }
         } else {
             handler.post(stateObserversNotifier)
