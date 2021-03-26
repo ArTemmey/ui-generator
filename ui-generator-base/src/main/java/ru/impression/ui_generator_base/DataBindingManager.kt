@@ -1,5 +1,6 @@
 package ru.impression.ui_generator_base
 
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,54 +8,64 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 
-class DataBindingManager(private val parentComponent: Component<*, *>) {
+class DataBindingManager(private val component: Component<*, *>) {
 
     private val context by lazy {
-        (parentComponent as? Fragment)?.context ?: (parentComponent as? View)?.context
+        (component as? Fragment)?.context ?: (component as? View)?.context
     }
 
     private var currentBinding: ViewDataBinding? = null
 
     private var currentLayoutResId: Int? = null
 
+    private val handler = Handler()
+
     internal fun updateBinding(
         newLayoutResId: Int?,
-        immediately: Boolean,
-        attachToRoot: Boolean
+        executeBindingsImmediately: Boolean,
+        attachToContainer: Boolean
     ): ViewDataBinding? {
         currentBinding?.let {
             if (newLayoutResId != null && newLayoutResId == currentLayoutResId) {
-                it.setViewModel(parentComponent.viewModel)
-                if (immediately) it.executePendingBindings()
+                it.setViewModel(component.viewModel)
+                if (executeBindingsImmediately) it.executePendingBindings()
                 return it
             }
-            (parentComponent.container as? ViewGroup)?.removeAllViews()
+            (component.container as? ViewGroup)?.removeAllViews()
         }
-        currentBinding = newLayoutResId
-            ?.let { inflateBinding(it, attachToRoot) }
-            ?.apply {
-                prepare()
-                if (immediately) executePendingBindings()
+        newLayoutResId?.let { inflateBinding(it, attachToContainer) }
+            ?.apply { prepare(executeBindingsImmediately) }
+            ?.also {
+                currentBinding = it
+                currentLayoutResId = newLayoutResId
+                onBindingCreated(attachToContainer)
             }
-        currentLayoutResId = newLayoutResId
         return currentBinding
     }
 
 
-    private fun inflateBinding(layoutResId: Int, attachToRoot: Boolean): ViewDataBinding? {
+    private fun inflateBinding(layoutResId: Int, attachToContainer: Boolean): ViewDataBinding? {
         return DataBindingUtil.inflate(
             LayoutInflater.from(context ?: return null),
             layoutResId,
-            parentComponent.container as? ViewGroup,
-            attachToRoot
+            component.container as? ViewGroup,
+            attachToContainer
         )
     }
 
-    private fun ViewDataBinding.prepare() {
-        this.lifecycleOwner = parentComponent.boundLifecycleOwner
-        setViewModel(parentComponent.viewModel)
-        setVariable("component", parentComponent)
+    private fun ViewDataBinding.prepare(executeBindings: Boolean) {
+        this.lifecycleOwner = component.boundLifecycleOwner
+        setViewModel(component.viewModel)
+        setVariable("component", component)
         setVariable("context", context)
+        if (executeBindings) executePendingBindings()
+    }
+
+    private fun onBindingCreated(attachedToContainer: Boolean) {
+        if (attachedToContainer)
+            component.render(true)
+        else
+            handler.post { component.render(true) }
     }
 
     fun releaseBinding() {
