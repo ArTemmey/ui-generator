@@ -22,6 +22,7 @@ import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.isSubclassOf
 
 val View.activity: AppCompatActivity?
     get() {
@@ -43,26 +44,39 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
         try {
             for (delegateToAttr in viewModel.delegateToAttrs) {
                 val property = delegateToAttr.key.getProperty()
-                (property as KMutableProperty1<Any?, Any?>).set(
-                    viewModel,
-                    when (property.returnType.classifier) {
-                        Boolean::class -> getBoolean(
-                            delegateToAttr.value,
-                            property.get(viewModel) as Boolean? ?: false
-                        )
-                        Int::class -> getInt(
-                            delegateToAttr.value,
-                            property.get(viewModel) as Int? ?: 0
-                        )
-                        Float::class -> getFloat(
-                            delegateToAttr.value,
-                            property.get(viewModel) as Float? ?: 0f
-                        )
-                        String::class -> getString(delegateToAttr.value)
-                        Drawable::class -> getDrawable(delegateToAttr.value)
+                val classifier = property?.returnType?.classifier as? KClass<*> ?: continue
+                property as KMutableProperty1<Any?, Any?>
+                val value = when (classifier) {
+                    Boolean::class -> getBoolean(
+                        delegateToAttr.value,
+                        property.get(viewModel) as Boolean? ?: false
+                    )
+
+                    Int::class -> getInt(
+                        delegateToAttr.value,
+                        property.get(viewModel) as Int? ?: 0
+                    )
+
+                    Float::class -> getFloat(
+                        delegateToAttr.value,
+                        property.get(viewModel) as Float? ?: 0f
+                    )
+
+                    String::class -> getString(delegateToAttr.value)
+
+                    Drawable::class -> getDrawable(delegateToAttr.value)
+
+                    else -> when {
+                        classifier.isSubclassOf(Enum::class) ->
+                            getInt(delegateToAttr.value, -1)
+                                .takeIf { it != -1 }
+                                ?.let { classifier.java.enumConstants?.get(it) }
+                                ?: continue
+
                         else -> continue
                     }
-                )
+                }
+                property.set(viewModel, value)
             }
         } finally {
             recycle()

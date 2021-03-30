@@ -22,7 +22,7 @@ interface Component<C, VM : ComponentViewModel> {
 
     val dataBindingManager: DataBindingManager
 
-    fun <T : ComponentViewModel> createViewModel(viewModelClass: KClass<T>): T {
+    fun <T : ViewModel> createViewModel(viewModelClass: KClass<T>): T {
         val activity = when (this) {
             is View -> activity
             is Fragment -> activity

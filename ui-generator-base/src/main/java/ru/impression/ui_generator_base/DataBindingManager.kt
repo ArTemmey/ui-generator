@@ -1,6 +1,7 @@
 package ru.impression.ui_generator_base
 
 import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +19,7 @@ class DataBindingManager(private val component: Component<*, *>) {
 
     private var currentLayoutResId: Int? = null
 
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     internal fun updateBinding(
         newLayoutResId: Int?,

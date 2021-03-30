@@ -50,14 +50,14 @@ fun View.updateLayoutParams(
 
 fun <T : Any> View.updateTag(
     key: Int,
-    existenceCondition: Boolean,
+    existenceCondition: Boolean = true,
     create: () -> T,
     update: ((T) -> Unit)? = null,
     onRemoved: ((T) -> Unit)? = null
 ) {
     val oldTag = getTag(key) as T?
     if (oldTag == null && existenceCondition) {
-        setTag(key, create().apply { update?.let { it(this) } })
+        setTag(key, create().also { update?.invoke(it) })
     } else if (oldTag != null) {
         if (!existenceCondition) {
             setTag(key, null)

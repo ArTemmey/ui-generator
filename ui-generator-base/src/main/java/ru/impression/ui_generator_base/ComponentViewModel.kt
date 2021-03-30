@@ -5,14 +5,17 @@ import android.os.Looper
 import android.os.Parcelable
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
+import ru.impression.ui_generator_annotations.SharedViewModel
 import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.full.hasAnnotation
 
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
     internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
 
-    private var component: Component<*, *>? = null
+    @PublishedApi
+    internal var _component: Component<*, *>? = null
 
     internal var componentHasMissedStateChange = false
 
@@ -34,7 +37,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     fun setComponent(component: Component<*, *>) {
-        this.component = component
+        this._component = component
         component.boundLifecycleOwner.lifecycle.addObserver(this)
         if (componentHasMissedStateChange) {
             componentHasMissedStateChange = false
@@ -43,8 +46,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     private fun unsetComponent() {
-        component?.boundLifecycleOwner?.lifecycle?.removeObserver(this)
-        component = null
+        _component?.boundLifecycleOwner?.lifecycle?.removeObserver(this)
+        _component = null
     }
 
     fun initSubscriptions(block: () -> Unit) {
@@ -87,7 +90,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private fun notifyStateObservers(immediately: Boolean) {
         handler.removeCallbacks(stateObserversNotifier)
         if (immediately && Thread.currentThread() === Looper.getMainLooper().thread) {
-            component?.render(executeBindingsImmediately = true)
+            _component?.render(executeBindingsImmediately = true)
                 ?: run { componentHasMissedStateChange = true }
             stateObservers.values.forEach { set -> set.forEach { it() } }
         } else {
@@ -96,13 +99,25 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     internal fun notifyTwoWayPropChanged(propertyName: String) {
-        component?.onTwoWayPropChanged(propertyName)
+        _component?.onTwoWayPropChanged(propertyName)
+    }
+
+    inline fun <reified T : ViewModel> getSharedViewModel(): T {
+        val viewModelClass = T::class
+        val component = _component
+        return when {
+            !viewModelClass.hasAnnotation<SharedViewModel>() ->
+                throw IllegalArgumentException("ViewModel must have SharedViewModel annotation")
+            component == null ->
+                throw IllegalStateException("Cannot get ViewModel when detached from component")
+            else -> component.createViewModel(viewModelClass)
+        }
     }
 
     final override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        if (source === component?.boundLifecycleOwner) onLifecycleEvent(event)
+        if (source === _component?.boundLifecycleOwner) onLifecycleEvent(event)
         if (source.lifecycle.currentState == Lifecycle.State.DESTROYED) {
-            if (source === component?.boundLifecycleOwner) unsetComponent()
+            if (source === _component?.boundLifecycleOwner) unsetComponent()
             removeStateObservers(source)
         }
     }

@@ -3,6 +3,10 @@
 
     <declare-styleable name="TextAndImageBlockComponent">
         <attr name="title" format="string" />
+        <attr name="titlePosition" format="enum">
+            <enum name="belowPicture" value="0" />
+            <enum name="abovePicture" value="1" />
+        </attr>
         <attr name="picture" format="reference" />
     </declare-styleable>
 </resources>

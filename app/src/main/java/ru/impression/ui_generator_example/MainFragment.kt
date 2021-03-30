@@ -34,9 +34,7 @@ class MainFragmentViewModel : CoroutineViewModel() {
     var welcomeText by state<String?>(null)
 
 
-    var toastMessage by state<String?>(null)
-
-    var count by state(0) { toastMessage = "Count is $it!" }
+    var count by state(0) { showToast("Count is $it!") }
 
 
     var currentTime by state({

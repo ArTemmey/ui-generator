@@ -5,6 +5,11 @@ import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.databinding.BindingAdapter
+import ru.impression.ui_generator_base.ComponentViewModel
+
+fun ComponentViewModel.showToast(toastMessage: String) {
+    getSharedViewModel<ToastShowerViewModel>().toastMessage = toastMessage
+}
 
 object DataBindingExt {
 

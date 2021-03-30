@@ -14,11 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ru.impression.ui_generator_example.ToastShowerComponent
-            message="@={viewModel.toastMessage}"
-            android:layout_width="0dp"
-            android:layout_height="0dp" />
-
         <ProgressBar
             isVisible="@{viewModel.countDownIsLoading}"
             android:layout_width="wrap_content"
@@ -66,7 +61,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     app:picture="@drawable/sample_image_2"
-                    app:title="Flower" />
+                    app:title="Flower"
+                    app:titlePosition="abovePicture" />
 
             </LinearLayout>
 
