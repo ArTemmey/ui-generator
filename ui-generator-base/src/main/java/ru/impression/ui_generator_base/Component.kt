@@ -45,6 +45,7 @@ interface Component<C, VM : ComponentViewModel> {
         executeBindingsImmediately: Boolean = true,
     ): ViewDataBinding? {
         viewModel.componentHasMissedStateChange = false
+        viewModel.beforeRender()
         return dataBindingManager.updateBinding(
             scheme.render?.invoke(this as C, viewModel),
             attachToContainer,

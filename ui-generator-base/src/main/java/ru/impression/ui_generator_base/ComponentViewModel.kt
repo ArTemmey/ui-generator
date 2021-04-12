@@ -122,6 +122,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         }
     }
 
+    open fun beforeRender() = Unit
+
     protected open fun onLifecycleEvent(event: Lifecycle.Event) = Unit
 
     open fun onSaveInstanceState(): Parcelable? = null
