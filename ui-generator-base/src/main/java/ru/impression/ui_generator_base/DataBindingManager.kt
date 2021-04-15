@@ -19,7 +19,7 @@ class DataBindingManager(private val component: Component<*, *>) {
 
     private var currentLayoutResId: Int? = null
 
-    private val handler = Handler(Looper.getMainLooper())
+    private val bindingInitHandler = Handler(Looper.getMainLooper())
 
     internal fun updateBinding(
         newLayoutResId: Int?,
@@ -75,7 +75,7 @@ class DataBindingManager(private val component: Component<*, *>) {
                 executeBindingsImmediately = executeBindingsImmediately
             )
         else
-            handler.post {
+            bindingInitHandler.post {
                 component.render(
                     rebindViewModel = false,
                     executeBindingsImmediately = executeBindingsImmediately
@@ -86,5 +86,6 @@ class DataBindingManager(private val component: Component<*, *>) {
     fun releaseBinding() {
         currentBinding = null
         currentLayoutResId = null
+        bindingInitHandler.removeCallbacksAndMessages(null)
     }
 }
