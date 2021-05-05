@@ -19,30 +19,36 @@ abstract class ComponentClassBuilder(
 ) {
 
     protected val propProperties = ArrayList<PropProperty>().apply {
-        val viewModelEnclosedElements =
-            (viewModelClass as DeclaredType).asElement().enclosedElements
-        viewModelEnclosedElements.forEach { viewModelElement ->
-            viewModelElement.getAnnotation(Prop::class.java)?.let { annotation ->
-                var propertyName = viewModelElement.toString().substringBefore('$')
-                if (propertyName.contains("get")) propertyName =
-                    propertyName.replace("get", "").decapitalize(Locale.getDefault())
-                val capitalizedPropertyName = propertyName.substring(0, 1)
-                    .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                val propertyGetter = viewModelEnclosedElements.first {
-                    it.toString() == "get$capitalizedPropertyName()"
-                            || it.toString() == "$propertyName()"
-                }
-                val propertyType = (propertyGetter as ExecutableElement).returnType
-                add(
-                    PropProperty(
-                        propertyName,
-                        capitalizedPropertyName,
-                        propertyType,
-                        annotation.twoWay,
-                        "${propertyName}AttrChanged"
+        var downwardViewModelClass = viewModelClass
+        while (downwardViewModelClass.toString() != "ru.impression.ui_generator_base.ComponentViewModel" && downwardViewModelClass.toString() != "ru.impression.ui_generator_base.CoroutineViewModel") {
+            val viewModelEnclosedElements =
+                (downwardViewModelClass as DeclaredType).asElement().enclosedElements
+
+            viewModelEnclosedElements.forEach { viewModelElement ->
+                viewModelElement.getAnnotation(Prop::class.java)?.let { annotation ->
+                    var propertyName = viewModelElement.toString().substringBefore('$')
+                    if (propertyName.contains("get")) propertyName =
+                        propertyName.replace("get", "").decapitalize(Locale.getDefault())
+                    val capitalizedPropertyName = propertyName.substring(0, 1)
+                        .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
+                    val propertyGetter = viewModelEnclosedElements.first {
+                        it.toString() == "get$capitalizedPropertyName()"
+                                || it.toString() == "$propertyName()"
+                    }
+                    val propertyType = (propertyGetter as ExecutableElement).returnType
+                    add(
+                        PropProperty(
+                            propertyName,
+                            capitalizedPropertyName,
+                            propertyType,
+                            annotation.twoWay,
+                            "${propertyName}AttrChanged"
+                        )
                     )
-                )
+                }
             }
+
+            downwardViewModelClass = (downwardViewModelClass.asElement() as TypeElement).superclass
         }
     }
 
