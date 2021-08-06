@@ -15,7 +15,7 @@ class DataBindingManager(private val component: Component<*, *>) {
         (component as? Fragment)?.context ?: (component as? View)?.context
     }
 
-    private var currentBinding: ViewDataBinding? = null
+    var currentBinding: ViewDataBinding? = null
 
     private var currentLayoutResId: Int? = null
 
