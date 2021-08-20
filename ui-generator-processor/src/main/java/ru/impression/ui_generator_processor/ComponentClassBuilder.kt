@@ -63,9 +63,18 @@ abstract class ComponentClassBuilder(
         addProperty(buildContainerProperty())
         addProperty(buildBoundLifecycleOwnerProperty())
         addProperty(buildDataBindingManagerProperty())
+        addProperty(buildHooksProperty())
+        addInitializerBlock(buildInitializerBlock())
         addRestMembers()
         build()
     }
+
+    private fun buildInitializerBlock() = CodeBlock.of(
+        """
+            scheme.render?.invoke(this, viewModel)
+            hooks.callInitBlocks()
+        """.trimIndent()
+    )
 
     private fun buildSchemeProperty() =
         with(PropertySpec.builder("scheme", scheme.asClassName())) {
@@ -88,6 +97,17 @@ abstract class ComponentClassBuilder(
     ) {
         addModifiers(KModifier.OVERRIDE)
         initializer("DataBindingManager(this)")
+        build()
+    }
+
+    private fun buildHooksProperty() = with(
+        PropertySpec.builder(
+            "hooks",
+            ClassName("ru.impression.ui_generator_base", "Hooks")
+        )
+    ) {
+        addModifiers(KModifier.OVERRIDE)
+        initializer("Hooks()")
         build()
     }
 

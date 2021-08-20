@@ -1,18 +1,35 @@
 package ru.impression.ui_generator_example
 
+import android.util.Log
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
-import ru.impression.ui_generator_base.ComponentScheme
-import ru.impression.ui_generator_base.CoroutineViewModel
-import ru.impression.ui_generator_base.isLoading
-import ru.impression.ui_generator_base.reload
+import ru.impression.ui_generator_base.*
 
 @MakeComponent
 class MainFragment :
-    ComponentScheme<Fragment, MainFragmentViewModel>({ R.layout.main_fragment })
+    ComponentScheme<Fragment, MainFragmentViewModel>({
+        onInit {
+            Log.v(MainFragment::class.simpleName, "onInit")
+        }
+        withLifecycle {
+            onCreate {
+                Log.v(MainFragment::class.simpleName, "onCreate")
+            }
+            onStart {
+                Log.v(MainFragment::class.simpleName, "onStart")
+            }
+            onResume {
+                Log.v(MainFragment::class.simpleName, "onResume")
+            }
+            onDestroy {
+                Log.v(MainFragment::class.simpleName, "onDestroy")
+            }
+        }
+        R.layout.main_fragment
+    })
 
 class MainFragmentViewModel : CoroutineViewModel() {
 

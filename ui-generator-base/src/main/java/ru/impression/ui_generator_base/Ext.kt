@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +15,7 @@ import androidx.core.os.bundleOf
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Job
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
@@ -146,3 +149,48 @@ fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel?) {
 }
 
 fun View.asLifecycleOwner() = ViewLifecycleOwner(this)
+
+
+fun View.onInit(block: () -> Unit) {
+    (this as? Component<*, *>)?.onInit(block)
+}
+
+fun Fragment.onInit(block: () -> Unit) {
+    (this as? Component<*, *>)?.onInit(block)
+}
+
+private fun Component<*, *>.onInit(block: () -> Unit) {
+    hooks.addInitBlock(block)
+}
+
+fun View.withLifecycle(block: LifecycleScope.() -> Unit) {
+    onInit {
+        (this as? Component<*, *>)?.withLifecycle(block)
+    }
+}
+
+fun Fragment.withLifecycle(block: LifecycleScope.() -> Unit) {
+    onInit {
+        Handler(Looper.getMainLooper()).post {
+            (this as? Component<*, *>)?.withLifecycle(block)
+        }
+    }
+}
+
+private fun Component<*, *>.withLifecycle(block: LifecycleScope.() -> Unit) {
+    val scope = LifecycleScope()
+    block(scope)
+    boundLifecycleOwner.lifecycle.addObserver(object : LifecycleEventObserver {
+        override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+            when (event) {
+                Lifecycle.Event.ON_CREATE -> scope.callOnCreateBlocks()
+                Lifecycle.Event.ON_START -> scope.callOnStartBlocks()
+                Lifecycle.Event.ON_RESUME -> scope.callOnResumeBlocks()
+                Lifecycle.Event.ON_PAUSE -> scope.callOnPauseBlocks()
+                Lifecycle.Event.ON_STOP -> scope.callOnStopBlocks()
+                Lifecycle.Event.ON_DESTROY -> scope.callOnDestroyBlocks()
+            }
+        }
+
+    })
+}

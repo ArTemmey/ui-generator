@@ -15,7 +15,12 @@ class SimpleLifecycle(private val owner: LifecycleOwner) : Lifecycle() {
     private val observers = CopyOnWriteArraySet<LifecycleEventObserver>()
 
     override fun addObserver(observer: LifecycleObserver) {
-        observers.add(observer as? LifecycleEventObserver ?: return)
+        if (observer !is LifecycleEventObserver) return
+        observers.add(observer)
+        if (state > State.INITIALIZED)
+            repeat(state.ordinal - 1) {
+                observer.onStateChanged(owner, Event.upTo(State.values()[it + 1]) ?: return)
+            }
     }
 
     override fun removeObserver(observer: LifecycleObserver) {

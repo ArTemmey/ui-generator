@@ -9,7 +9,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 
-
 interface Component<C, VM : ComponentViewModel> {
 
     val scheme: ComponentScheme<C, VM>
@@ -21,6 +20,8 @@ interface Component<C, VM : ComponentViewModel> {
     val boundLifecycleOwner: LifecycleOwner
 
     val dataBindingManager: DataBindingManager
+
+    val hooks: Hooks
 
     fun <T : ViewModel> createViewModel(viewModelClass: KClass<T>): T {
         val activity = when (this) {
