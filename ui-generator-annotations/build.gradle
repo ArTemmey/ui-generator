@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
+apply plugin: 'maven-publish'
 
 group='com.github.ArtemiyDmtrvch'
 sourceCompatibility = 1.7
