@@ -18,6 +18,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Job
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import java.util.*
 import kotlin.reflect.KClass
@@ -37,10 +41,40 @@ val View.activity: AppCompatActivity?
         return contextWrapper
     }
 
-fun Fragment.putArgument(key: String, value: Any?) {
+@PublishedApi
+internal const val KEY_JSON_ARGS = "JSON_ARGS"
+
+inline fun <reified T> Fragment.putArgument(key: String, value: T) {
     val arguments = arguments ?: Bundle().also { arguments = it }
-    arguments.putAll(bundleOf(key to value))
+    try {
+        arguments.putAll(bundleOf(key to value))
+    } catch (e: IllegalArgumentException) {
+        e.printStackTrace()
+        try {
+            arguments.putString(key, Json.encodeToString(value))
+            arguments.putStringArray(
+                KEY_JSON_ARGS,
+                (arguments.getStringArray(KEY_JSON_ARGS) ?: emptyArray<String>()) + arrayOf(key)
+            )
+        } catch (e: SerializationException) {
+            e.printStackTrace()
+        }
+    }
 }
+
+
+inline fun <reified T> Fragment.getArgument(key: String): T? = arguments?.get(key)?.let {
+    when {
+        arguments?.getStringArray(KEY_JSON_ARGS)?.contains(key) == true -> try {
+            Json.decodeFromString<T>(it as? String ?: return@let null)
+        } catch (e: SerializationException) {
+            null
+        }
+        it is T -> it
+        else -> null
+    }
+}
+
 
 fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : Component<*, VM>, T : View {
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {

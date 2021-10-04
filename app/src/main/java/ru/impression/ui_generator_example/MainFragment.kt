@@ -50,6 +50,9 @@ class MainFragmentViewModel : CoroutineViewModel() {
     @Prop
     var welcomeText by state<String?>(null)
 
+    @Prop
+    var greetingStructure by state<GreetingStructure?>(null)
+
 
     var count by state(0) { showToast("Count is $it!") }
 

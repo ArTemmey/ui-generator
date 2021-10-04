@@ -11,7 +11,9 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.findFragmentByTag(MainFragmentComponent::class.qualifiedName)
             ?: supportFragmentManager.beginTransaction().replace(
                 R.id.container,
-                MainFragmentComponent().apply { welcomeText = "Hello world!" },
+                MainFragmentComponent().apply {
+                    welcomeText = "Hello"; greetingStructure = GreetingStructure("world")
+                },
                 MainFragmentComponent::class.qualifiedName
             ).commit()
     }
