@@ -74,6 +74,7 @@ class FragmentComponentClassBuilder(
 
     override fun TypeSpec.Builder.addRestMembers() {
         propProperties.forEach { addProperty(buildPropWrapperProperty(it)) }
+        addInitializerBlock(buildInitializerBlock())
         addFunction(buildOnCreateFunction())
         addFunction(buildOnCreateViewFunction())
         addFunction(buildOnActivityCreatedFunction())
@@ -93,9 +94,10 @@ class FragmentComponentClassBuilder(
             FunSpec.getterBuilder()
                 .addCode(
                     """
-                        return field ?: arguments?.get("${propProperty.name}") as? ${propProperty.kotlinType}
+                        return field ?: %M("${propProperty.name}")
                     
-                    """.trimIndent()
+                    """.trimIndent(),
+                    MemberName("ru.impression.ui_generator_base", "getArgument")
                 )
                 .build()
         )
@@ -114,6 +116,12 @@ class FragmentComponentClassBuilder(
         )
         build()
     }
+
+    private fun buildInitializerBlock() = CodeBlock.of(
+        """
+            hooks.callInitBlocks()
+        """.trimIndent()
+    )
 
     private fun buildOnCreateFunction() = with(FunSpec.builder("onCreate")) {
         addModifiers(KModifier.OVERRIDE)

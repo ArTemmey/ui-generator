@@ -64,17 +64,9 @@ abstract class ComponentClassBuilder(
         addProperty(buildBoundLifecycleOwnerProperty())
         addProperty(buildDataBindingManagerProperty())
         addProperty(buildHooksProperty())
-        addInitializerBlock(buildInitializerBlock())
         addRestMembers()
         build()
     }
-
-    private fun buildInitializerBlock() = CodeBlock.of(
-        """
-            scheme.render?.invoke(this, viewModel)
-            hooks.callInitBlocks()
-        """.trimIndent()
-    )
 
     private fun buildSchemeProperty() =
         with(PropertySpec.builder("scheme", scheme.asClassName())) {

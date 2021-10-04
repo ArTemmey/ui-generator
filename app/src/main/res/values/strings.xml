@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">UI-generator</string>
+    <string name="welcome">%s, %s!</string>
 </resources>
