@@ -32,24 +32,25 @@ abstract class ComponentClassBuilder(
             val viewModelEnclosedElements = downwardViewModelClass?.getAllProperties()
 
             viewModelEnclosedElements?.forEach { viewModelElement ->
-                viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()?.let { annotation ->
+                viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()
+                    ?.let { annotation ->
 
-                    val propertyGetter = viewModelElement.getter
-                    val propertyName = propertyGetter.toString().substringBefore(".")
-                    val capitalizedPropertyName = propertyName
-                        .substring(0, 1)
-                        .uppercase(Locale.getDefault()) + propertyName.substring(1)
+                        val propertyGetter = viewModelElement.getter
+                        val propertyName = propertyGetter.toString().substringBefore(".")
+                        val capitalizedPropertyName = propertyName
+                            .substring(0, 1)
+                            .uppercase(Locale.getDefault()) + propertyName.substring(1)
 
-                    add(
-                        PropProperty(
-                            propertyName,
-                            capitalizedPropertyName,
-                            propertyGetter!!.returnType!!.resolve(),
-                            annotation.twoWay,
-                            "${propertyName}AttrChanged"
+                        add(
+                            PropProperty(
+                                propertyName,
+                                capitalizedPropertyName,
+                                propertyGetter!!.returnType!!.resolve(),
+                                annotation.twoWay,
+                                "${propertyName}AttrChanged"
+                            )
                         )
-                    )
-                }
+                    }
             }
 
             downwardViewModelClass = downwardViewModelClass
@@ -96,7 +97,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("ru.impression.ui_generator_base.DataBindingManager(this)")
+        initializer("DataBindingManager(this)")
         build()
     }
 
@@ -107,7 +108,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("ru.impression.ui_generator_base.Hooks()")
+        initializer("Hooks()")
         build()
     }
 

@@ -21,18 +21,11 @@ android {
    dataBinding {
       enabled = true
    }
-   sourceSets {
-      main {
-         java {
-            srcDir "${buildDir.absolutePath}/generated/source/kaptKotlin/"
-         }
-      }
-   }
 }
 dependencies {
-   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-base:0.9.+'
-   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-annotations:0.9.+'
-   kapt 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-processor:0.9.+'
+   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-base:+'
+   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-annotations:+'
+   kapt 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-processor:+'
 }
 ```
 ## Why do you need UI-generator
