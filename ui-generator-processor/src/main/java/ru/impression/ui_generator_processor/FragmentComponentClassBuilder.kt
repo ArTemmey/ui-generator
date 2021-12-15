@@ -1,15 +1,14 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
 
 class FragmentComponentClassBuilder(
-    scheme: TypeElement,
+    scheme: KSClassDeclaration,
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    viewModelClass: TypeMirror
+    viewModelClass: KSClassDeclaration
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
@@ -19,7 +18,7 @@ class FragmentComponentClassBuilder(
 ) {
 
     override fun buildViewModelProperty() =
-        with(PropertySpec.builder("viewModel", viewModelClass.asTypeName())) {
+        with(PropertySpec.builder("viewModel", viewModelClass.asClassName())) {
             addModifiers(KModifier.OVERRIDE)
             delegate(if (propProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class) } ") else
                 with(CodeBlock.builder()) {

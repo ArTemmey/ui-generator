@@ -1,5 +1,0 @@
-rootProject.name='UI-generator'
-include ':app'
-include ':ui-generator-annotations'
-include ':ui-generator-processor'
-include ':ui-generator-base'

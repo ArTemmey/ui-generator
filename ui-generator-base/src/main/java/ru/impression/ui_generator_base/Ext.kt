@@ -1,3 +1,5 @@
+@file:Suppress("NonExhaustiveWhenStatementMigration")
+
 package ru.impression.ui_generator_base
 
 import android.content.Context

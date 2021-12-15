@@ -1,46 +1,50 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.containingFile
+import com.google.devtools.ksp.getAllSuperTypes
+import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import ru.impression.ui_generator_annotations.Prop
 import java.util.*
 import javax.lang.model.element.ExecutableElement
-import javax.lang.model.type.DeclaredType
 import kotlin.collections.ArrayList
+import kotlin.reflect.full.starProjectedType
 
 abstract class ComponentClassBuilder(
-    protected val scheme: TypeElement,
+    private val scheme: KSClassDeclaration,
     protected val resultClassName: String,
     protected val resultClassPackage: String,
-    protected val superclass: TypeName,
-    protected val viewModelClass: TypeMirror
+    private val superclass: TypeName,
+    protected val viewModelClass: KSClassDeclaration
 ) {
 
+    @OptIn(KspExperimental::class)
     protected val propProperties = ArrayList<PropProperty>().apply {
-        var downwardViewModelClass = viewModelClass
-        while (downwardViewModelClass.toString() != "ru.impression.ui_generator_base.ComponentViewModel" && downwardViewModelClass.toString() != "ru.impression.ui_generator_base.CoroutineViewModel") {
-            val viewModelEnclosedElements =
-                (downwardViewModelClass as DeclaredType).asElement().enclosedElements
+        var downwardViewModelClass: KSClassDeclaration? = viewModelClass
 
-            viewModelEnclosedElements.forEach { viewModelElement ->
-                viewModelElement.getAnnotation(Prop::class.java)?.let { annotation ->
-                    var propertyName = viewModelElement.toString().substringBefore('$')
-                    if (propertyName.contains("get")) propertyName =
-                        propertyName.replace("get", "").decapitalize(Locale.getDefault())
-                    val capitalizedPropertyName = propertyName.substring(0, 1)
-                        .toUpperCase(Locale.getDefault()) + propertyName.substring(1)
-                    val propertyGetter = viewModelEnclosedElements.first {
-                        it.toString() == "get$capitalizedPropertyName()"
-                                || it.toString() == "$propertyName()"
-                    }
-                    val propertyType = (propertyGetter as ExecutableElement).returnType
+        while (downwardViewModelClass?.fullName != "ru.impression.ui_generator_base.ComponentViewModel"
+            && downwardViewModelClass?.fullName != "ru.impression.ui_generator_base.CoroutineViewModel"
+        ) {
+            val viewModelEnclosedElements = downwardViewModelClass?.getAllProperties()
+
+            viewModelEnclosedElements?.forEach { viewModelElement ->
+                viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()?.let { annotation ->
+
+                    val propertyGetter = viewModelElement.getter
+                    val propertyName = propertyGetter.toString().substringBefore(".")
+                    val capitalizedPropertyName = propertyName
+                        .substring(0, 1)
+                        .uppercase(Locale.getDefault()) + propertyName.substring(1)
+
                     add(
                         PropProperty(
                             propertyName,
                             capitalizedPropertyName,
-                            propertyType,
+                            propertyGetter!!.returnType!!.resolve(),
                             annotation.twoWay,
                             "${propertyName}AttrChanged"
                         )
@@ -48,15 +52,19 @@ abstract class ComponentClassBuilder(
                 }
             }
 
-            downwardViewModelClass = (downwardViewModelClass.asElement() as TypeElement).superclass
+            downwardViewModelClass = downwardViewModelClass
+                ?.getAllSuperTypes()
+                ?.firstOrNull()
+                ?.declaration as? KSClassDeclaration
         }
     }
 
     fun build() = with(TypeSpec.classBuilder(resultClassName)) {
         superclass(superclass)
         addSuperinterface(
+
             ClassName("ru.impression.ui_generator_base", "Component")
-                .parameterizedBy(superclass, viewModelClass.asTypeName())
+                .parameterizedBy(superclass, viewModelClass.asClassName())
         )
         addProperty(buildSchemeProperty())
         addProperty(buildViewModelProperty())
@@ -88,7 +96,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("DataBindingManager(this)")
+        initializer("ru.impression.ui_generator_base.DataBindingManager(this)")
         build()
     }
 
@@ -99,7 +107,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("Hooks()")
+        initializer("ru.impression.ui_generator_base.Hooks()")
         build()
     }
 
@@ -108,7 +116,7 @@ abstract class ComponentClassBuilder(
     protected class PropProperty(
         val name: String,
         val capitalizedName: String,
-        val type: TypeMirror,
+        val type: KSType,
         val twoWay: Boolean,
         val attrChangedPropertyName: String
     ) {

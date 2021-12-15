@@ -1,15 +1,15 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
 
 class ViewComponentClassBuilder(
-    scheme: TypeElement,
+    scheme: KSClassDeclaration,
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    viewModelClass: TypeMirror
+    viewModelClass: KSClassDeclaration
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
@@ -20,7 +20,7 @@ class ViewComponentClassBuilder(
 
     override fun buildViewModelProperty() =
         with(
-            PropertySpec.builder("viewModel", viewModelClass.asTypeName())
+            PropertySpec.builder("viewModel", viewModelClass.asClassName())
         ) {
             addModifiers(KModifier.OVERRIDE)
             initializer("createViewModel($viewModelClass::class)")
