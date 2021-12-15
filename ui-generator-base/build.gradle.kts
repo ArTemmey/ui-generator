@@ -44,6 +44,30 @@ java {
     targetCompatibility = java_version
 }
 
+val sourcesJar by tasks.creating(Jar::class) {
+    archiveClassifier.set("sources")
+    from(android.sourceSets.getByName("main").java.srcDirs)
+}
+
+afterEvaluate {
+    publishing {
+        repositories {
+            maven(url = "https://jitpack.io")
+        }
+        publications {
+            create<MavenPublication>("debug") {
+                // Applies the component for the release build variant.
+                from(components["debug"])
+                artifact(sourcesJar)
+            }
+            create<MavenPublication>("release") {
+                // Applies the component for the release build variant.
+                from(components["release"])
+                artifact(sourcesJar)
+            }
+        }
+    }
+}
 
 dependencies {
     implementation(project(":ui-generator-annotations"))
