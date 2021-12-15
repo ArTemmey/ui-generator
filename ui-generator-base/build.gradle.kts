@@ -44,6 +44,7 @@ java {
     targetCompatibility = java_version
 }
 
+
 dependencies {
     implementation(project(":ui-generator-annotations"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
