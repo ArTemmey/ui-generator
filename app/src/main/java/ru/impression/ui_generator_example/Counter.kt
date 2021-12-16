@@ -11,7 +11,7 @@ import ru.impression.ui_generator_base.withLifecycle
 import kotlin.reflect.KClass
 
 @MakeComponent
-class Counter : ComponentScheme<FrameLayout, CounterViewModel>({
+class Counter : ComponentScheme<FrameLayout, CounterViewModelOverride>({
     onInit {
         Log.v(Counter::class.simpleName, "onInit")
     }
@@ -26,10 +26,10 @@ class Counter : ComponentScheme<FrameLayout, CounterViewModel>({
     R.layout.counter
 })
 
-class CounterViewModel : ComponentViewModel() {
+open class CounterViewModel : ComponentViewModel() {
 
     @Prop(twoWay = true)
-    var count by state(0)
+    open var count by state(0)
 
     // For checking generation
     @Prop
@@ -42,4 +42,11 @@ class CounterViewModel : ComponentViewModel() {
     fun decrement() {
         count--
     }
+}
+
+// Check override properties
+class CounterViewModelOverride: CounterViewModel() {
+
+    @Prop(twoWay = true)
+    override var count by state(2)
 }

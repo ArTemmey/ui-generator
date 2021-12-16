@@ -29,7 +29,9 @@ abstract class ComponentClassBuilder(
         while (downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.ComponentViewModel"
             && downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.CoroutineViewModel"
         ) {
-            val viewModelEnclosedElements = downwardViewModelClass?.getAllProperties()
+            val viewModelEnclosedElements = downwardViewModelClass
+                ?.getAllProperties()
+                ?.filter { it.findOverridee() == null }
 
             viewModelEnclosedElements?.forEach { viewModelElement ->
                 viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()
