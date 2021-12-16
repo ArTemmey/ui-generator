@@ -2,7 +2,10 @@ package ru.impression.ui_generator_processor
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toClassName
 
+@OptIn(KotlinPoetKspPreview::class)
 class FragmentComponentClassBuilder(
     scheme: KSClassDeclaration,
     resultClassName: String,
@@ -18,7 +21,7 @@ class FragmentComponentClassBuilder(
 ) {
 
     override fun buildViewModelProperty() =
-        with(PropertySpec.builder("viewModel", viewModelClass.asClassName())) {
+        with(PropertySpec.builder("viewModel", viewModelClass.toClassName())) {
             addModifiers(KModifier.OVERRIDE)
             delegate(if (propProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class) } ") else
                 with(CodeBlock.builder()) {

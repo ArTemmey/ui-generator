@@ -48,7 +48,6 @@ kotlin {
     }
 }
 
-
 dependencies {
     implementation(project(":ui-generator-base"))
     implementation(project(":ui-generator-annotations"))

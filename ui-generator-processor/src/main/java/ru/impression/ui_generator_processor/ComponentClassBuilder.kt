@@ -8,17 +8,21 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import ru.impression.ui_generator_annotations.Prop
 import java.util.*
 import javax.lang.model.element.ExecutableElement
 import kotlin.collections.ArrayList
 import kotlin.reflect.full.starProjectedType
 
+@OptIn(KotlinPoetKspPreview::class)
 abstract class ComponentClassBuilder(
-    private val scheme: KSClassDeclaration,
+    protected val scheme: KSClassDeclaration,
     protected val resultClassName: String,
     protected val resultClassPackage: String,
-    private val superclass: TypeName,
+    protected val superclass: TypeName,
     protected val viewModelClass: KSClassDeclaration
 ) {
 
@@ -26,8 +30,8 @@ abstract class ComponentClassBuilder(
     protected val propProperties = ArrayList<PropProperty>().apply {
         var downwardViewModelClass: KSClassDeclaration? = viewModelClass
 
-        while (downwardViewModelClass?.fullName != "ru.impression.ui_generator_base.ComponentViewModel"
-            && downwardViewModelClass?.fullName != "ru.impression.ui_generator_base.CoroutineViewModel"
+        while (downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.ComponentViewModel"
+            && downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.CoroutineViewModel"
         ) {
             val viewModelEnclosedElements = downwardViewModelClass?.getAllProperties()
 
@@ -45,7 +49,7 @@ abstract class ComponentClassBuilder(
                             PropProperty(
                                 propertyName,
                                 capitalizedPropertyName,
-                                propertyGetter!!.returnType!!.resolve(),
+                                propertyGetter!!.returnType!!.resolve().starProjection(),
                                 annotation.twoWay,
                                 "${propertyName}AttrChanged"
                             )
@@ -65,7 +69,7 @@ abstract class ComponentClassBuilder(
         addSuperinterface(
 
             ClassName("ru.impression.ui_generator_base", "Component")
-                .parameterizedBy(superclass, viewModelClass.asClassName())
+                .parameterizedBy(superclass, viewModelClass.toClassName())
         )
         addProperty(buildSchemeProperty())
         addProperty(buildViewModelProperty())
@@ -78,9 +82,9 @@ abstract class ComponentClassBuilder(
     }
 
     private fun buildSchemeProperty() =
-        with(PropertySpec.builder("scheme", scheme.asClassName())) {
+        with(PropertySpec.builder("scheme", scheme.toClassName())) {
             addModifiers(KModifier.OVERRIDE)
-            initializer("%T()", scheme.asClassName())
+            initializer("%T()", scheme.toClassName())
             build()
         }
 
@@ -114,6 +118,7 @@ abstract class ComponentClassBuilder(
 
     abstract fun TypeSpec.Builder.addRestMembers()
 
+    @OptIn(KotlinPoetKspPreview::class)
     protected class PropProperty(
         val name: String,
         val capitalizedName: String,
@@ -121,6 +126,6 @@ abstract class ComponentClassBuilder(
         val twoWay: Boolean,
         val attrChangedPropertyName: String
     ) {
-        val kotlinType = type.asTypeName().javaToKotlinType().copy(true)
+        val kotlinType = type.toTypeName().copy(true)
     }
 }

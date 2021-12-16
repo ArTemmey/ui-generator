@@ -8,6 +8,7 @@ import ru.impression.ui_generator_base.ComponentScheme
 import ru.impression.ui_generator_base.ComponentViewModel
 import ru.impression.ui_generator_base.onInit
 import ru.impression.ui_generator_base.withLifecycle
+import kotlin.reflect.KClass
 
 @MakeComponent
 class Counter : ComponentScheme<FrameLayout, CounterViewModel>({
@@ -29,6 +30,9 @@ class CounterViewModel : ComponentViewModel() {
 
     @Prop(twoWay = true)
     var count by state(0)
+
+    @Prop
+    var clazz by state<KClass<*>?>(null)
 
     fun increment() {
         count++

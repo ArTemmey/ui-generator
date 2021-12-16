@@ -7,8 +7,12 @@ import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 import java.lang.StringBuilder
 
+@OptIn(KotlinPoetKspPreview::class)
 class UIGenerator(
     val codeGenerator: CodeGenerator,
     val logger: KSPLogger
@@ -25,6 +29,7 @@ class UIGenerator(
     }
 
     inner class BuilderVisitor : KSVisitorVoid() {
+
 
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             classDeclaration.primaryConstructor!!.accept(this, data)
@@ -45,13 +50,13 @@ class UIGenerator(
             var downwardClass = superClass.type?.resolve()
 
             classIteration@ while (downwardClass != null) {
-                when(downwardClass.asTypeName().canonicalName) {
+                when(downwardClass.toClassName().canonicalName) {
                     "android.view.View" -> {
                         resultClass = ViewComponentClassBuilder(
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
-                            superClass.type!!.resolve().asTypeName(),
+                            superClass.type!!.resolve().toTypeName(),
                             viewModelClass
                         ).build()
                         break@classIteration
@@ -61,7 +66,7 @@ class UIGenerator(
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
-                            superClass.type!!.resolve().asTypeName(),
+                            superClass.type!!.resolve().toTypeName(),
                             viewModelClass
                         ).build()
                         break@classIteration
@@ -72,7 +77,7 @@ class UIGenerator(
             }
 
             resultClass ?: return logger.error(
-                "Illegal type of superclass for ${classDeclaration.asClassName().canonicalName}. Superclass must be either " +
+                "Illegal type of superclass for ${classDeclaration.toClassName().canonicalName}. Superclass must be either " +
                         "out android.view.View or out " +
                         "androidx.fragment.app.Fragment"
             )
