@@ -2,16 +2,13 @@ package ru.impression.ui_generator_processor
 
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.*
 import ru.impression.ui_generator_annotations.Prop
 import java.util.*
-import javax.lang.model.element.ExecutableElement
 import kotlin.collections.ArrayList
-import kotlin.reflect.full.starProjectedType
 
 @OptIn(KotlinPoetKspPreview::class)
 abstract class ComponentClassBuilder(
@@ -29,11 +26,14 @@ abstract class ComponentClassBuilder(
         while (downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.ComponentViewModel"
             && downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.CoroutineViewModel"
         ) {
-            val viewModelEnclosedElements = downwardViewModelClass
-                ?.getAllProperties()
-                ?.filter { it.findOverridee() == null }
+            val properties = downwardViewModelClass?.getAllProperties()
+                ?.filter {
+                    it.findOverridee() == null
+                        && it.getAnnotationsByType(Prop::class).count() > 0
+                }
+                ?: return@apply
 
-            viewModelEnclosedElements?.forEach { viewModelElement ->
+            properties.forEach { viewModelElement ->
                 viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()
                     ?.let { annotation ->
 
@@ -56,8 +56,8 @@ abstract class ComponentClassBuilder(
             }
 
             downwardViewModelClass = downwardViewModelClass
-                ?.getAllSuperTypes()
-                ?.firstOrNull()
+                .getAllSuperTypes()
+                .firstOrNull()
                 ?.declaration as? KSClassDeclaration
         }
     }
