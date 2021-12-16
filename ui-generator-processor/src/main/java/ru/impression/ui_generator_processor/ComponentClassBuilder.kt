@@ -27,10 +27,7 @@ abstract class ComponentClassBuilder(
             && downwardViewModelClass?.qualifiedName?.asString() != "ru.impression.ui_generator_base.CoroutineViewModel"
         ) {
             val properties = downwardViewModelClass?.getAllProperties()
-                ?.filter {
-                    it.findOverridee() == null
-                        && it.getAnnotationsByType(Prop::class).count() > 0
-                }
+                ?.filter { it.hasAnnotationInTree<Prop>() }
                 ?: return@apply
 
             properties.forEach { viewModelElement ->
