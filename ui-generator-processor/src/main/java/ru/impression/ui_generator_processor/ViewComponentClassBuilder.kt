@@ -1,15 +1,18 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
-import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
+import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
 
+@OptIn(KotlinPoetKspPreview::class)
 class ViewComponentClassBuilder(
-    scheme: TypeElement,
+    scheme: KSClassDeclaration,
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    viewModelClass: TypeMirror
+    viewModelClass: KSClassDeclaration
 ) : ComponentClassBuilder(
     scheme,
     resultClassName,
@@ -20,7 +23,7 @@ class ViewComponentClassBuilder(
 
     override fun buildViewModelProperty() =
         with(
-            PropertySpec.builder("viewModel", viewModelClass.asTypeName())
+            PropertySpec.builder("viewModel", viewModelClass.toClassName())
         ) {
             addModifiers(KModifier.OVERRIDE)
             initializer("createViewModel($viewModelClass::class)")
@@ -242,7 +245,7 @@ class ViewComponentClassBuilder(
                 ).addMember("%S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            addParameter("value", propProperty.type.asTypeName().javaToKotlinType().copy(true))
+            addParameter("value", propProperty.type.toTypeName().copy(true))
             addCode(
                 """
                     if (value === view.viewModel.${propProperty.name}) return
@@ -280,7 +283,7 @@ class ViewComponentClassBuilder(
                 ).addMember("attribute = %S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            returns(propProperty.type.asTypeName().javaToKotlinType().copy(true))
+            returns(propProperty.type.toTypeName().copy(true))
             addCode("return view.viewModel.${propProperty.name}")
             build()
         }
