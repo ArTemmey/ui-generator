@@ -31,8 +31,9 @@ class CounterViewModel : ComponentViewModel() {
     @Prop(twoWay = true)
     var count by state(0)
 
+    // For checking generation
     @Prop
-    var clazz by state<KClass<*>?>(null)
+    var clazz by state<Triple<String, Boolean, Int>?>(null)
 
     fun increment() {
         count++

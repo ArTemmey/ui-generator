@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.toTypeParameterResolver
 import java.lang.StringBuilder
 
 @OptIn(KotlinPoetKspPreview::class)
@@ -19,7 +20,8 @@ class UIGenerator(
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation("ru.impression.ui_generator_annotations.MakeComponent")
+        val symbols =
+            resolver.getSymbolsWithAnnotation("ru.impression.ui_generator_annotations.MakeComponent")
         val ret = symbols.filter { !it.validate() }.toList()
         symbols
             .filter { it is KSClassDeclaration && it.validate() }
@@ -50,13 +52,15 @@ class UIGenerator(
             var downwardClass = superClass.type?.resolve()
 
             classIteration@ while (downwardClass != null) {
-                when(downwardClass.toClassName().canonicalName) {
+                when (downwardClass.toClassName().canonicalName) {
                     "android.view.View" -> {
                         resultClass = ViewComponentClassBuilder(
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
-                            superClass.type!!.resolve().toTypeName(),
+                            with(superClass.type!!.resolve()) {
+                                toTypeName(declaration.typeParameters.toTypeParameterResolver())
+                            },
                             viewModelClass
                         ).build()
                         break@classIteration
@@ -66,13 +70,17 @@ class UIGenerator(
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
-                            superClass.type!!.resolve().toTypeName(),
+                            with(superClass.type!!.resolve()) {
+                                toTypeName(declaration.typeParameters.toTypeParameterResolver())
+                            },
                             viewModelClass
                         ).build()
                         break@classIteration
                     }
 
-                    else -> downwardClass = (downwardClass.declaration as KSClassDeclaration).superTypes.firstOrNull()?.resolve()
+                    else -> downwardClass =
+                        (downwardClass.declaration as KSClassDeclaration).superTypes.firstOrNull()
+                            ?.resolve()
                 }
             }
 

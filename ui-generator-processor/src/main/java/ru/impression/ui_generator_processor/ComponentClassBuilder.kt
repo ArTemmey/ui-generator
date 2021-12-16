@@ -1,16 +1,12 @@
 package ru.impression.ui_generator_processor
 
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.containingFile
-import com.google.devtools.ksp.getAllSuperTypes
-import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.*
 import ru.impression.ui_generator_annotations.Prop
 import java.util.*
 import javax.lang.model.element.ExecutableElement
@@ -49,7 +45,7 @@ abstract class ComponentClassBuilder(
                             PropProperty(
                                 propertyName,
                                 capitalizedPropertyName,
-                                propertyGetter!!.returnType!!.resolve().starProjection(),
+                                propertyGetter!!.returnType!!,
                                 annotation.twoWay,
                                 "${propertyName}AttrChanged"
                             )
@@ -122,7 +118,7 @@ abstract class ComponentClassBuilder(
     protected class PropProperty(
         val name: String,
         val capitalizedName: String,
-        val type: KSType,
+        val type: KSTypeReference,
         val twoWay: Boolean,
         val attrChangedPropertyName: String
     ) {
