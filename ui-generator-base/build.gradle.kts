@@ -72,11 +72,11 @@ afterEvaluate {
 dependencies {
     implementation(project(":ui-generator-annotations"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.10")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version")
     implementation("androidx.appcompat:appcompat:1.4.0")
     implementation("androidx.core:core-ktx:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
     implementation("com.github.ArtemiyDmtrvch:kotlin-delegate-concatenator:cf5890d227")
-    api("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
+    api("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 }
