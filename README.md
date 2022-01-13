@@ -6,26 +6,31 @@
 ## Installation
 
 In your root build.gradle:
-```gradle
+```kts
 allprojects {
    repositories {
       ...
-      maven { url 'https://jitpack.io' }
+      maven(url = "https://jitpack.io")
    }
 }
 ```
 In your app/build.gradle:
-```gradle
+```kts
+plugins {
+   id("com.google.devtools.ksp") version "<ksp-version>"
+}
+
 android {
    ...
    dataBinding {
-      enabled = true
+      isEnabled = true
    }
 }
+
 dependencies {
-   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-base:+'
-   implementation 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-annotations:+'
-   kapt 'com.github.ArtemiyDmtrvch.ui-generator:ui-generator-processor:+'
+   implementation("com.github.ArtemiyDmtrvch.ui-generator:ui-generator-base:+")
+   implementation("com.github.ArtemiyDmtrvch.ui-generator:ui-generator-annotations:+")
+   ksp("com.github.ArtemiyDmtrvch.ui-generator:ui-generator-processor:+")
 }
 ```
 ## Why do you need UI-generator
