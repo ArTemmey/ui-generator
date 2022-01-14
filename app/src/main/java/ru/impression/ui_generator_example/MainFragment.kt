@@ -3,7 +3,9 @@ package ru.impression.ui_generator_example
 import android.util.Log
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.*
@@ -33,19 +35,18 @@ class MainFragment :
 
 class MainFragmentViewModel : CoroutineViewModel() {
 
-    var countDown by state(flow {
-        delay(1000)
-        emit(3)
-        delay(1000)
-        emit(2)
-        delay(1000)
-        emit(1)
-        delay(1000)
-        emit(0)
-    })
-
-    val countDownIsLoading get() = ::countDown.isLoading
-
+    var countDown by state(
+        MutableStateFlow(3).apply {
+            launch {
+                delay(1000)
+                emit(2)
+                delay(1000)
+                emit(1)
+                delay(1000)
+                emit(0)
+            }
+        }
+    )
 
     @Prop
     var welcomeText by state<String?>(null)

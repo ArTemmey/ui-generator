@@ -3,6 +3,7 @@ package ru.impression.ui_generator_base
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.Prop
@@ -15,7 +16,7 @@ open class StateDelegate<R : StateOwner, T>(
     initialValue: T,
     val onChanged: ((T) -> Unit)?,
     val loadValue: (suspend () -> T)? = null,
-    val valueFlow: Flow<T>? = null
+    val valueFlow: StateFlow<T>? = null
 ) : ReadWriteProperty<R, T> {
 
     @Volatile
@@ -50,14 +51,13 @@ open class StateDelegate<R : StateOwner, T>(
     }
 
     private fun collectValueFlow() {
-        isLoading = true
-        fun collect() = (parent as CoroutineScope).launch {
+        fun dpCollect() = (parent as CoroutineScope).launch {
             valueFlow!!.collect {
-                isLoading = false
+                if (it === value) return@collect
                 setValue(it)
             }
         }
-        (parent as? ComponentViewModel)?.initSubscriptions(::collect) ?: collect()
+        (parent as? ComponentViewModel)?.initSubscriptions(::dpCollect) ?: dpCollect()
     }
 
     override fun getValue(thisRef: R, property: KProperty<*>) = value

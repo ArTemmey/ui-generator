@@ -5,7 +5,7 @@
 
 ## Installation
 
-In your root build.gradle:
+In your root build.gradle.kts:
 ```kts
 allprojects {
    repositories {
@@ -14,7 +14,7 @@ allprojects {
    }
 }
 ```
-In your app/build.gradle:
+In your app/build.gradle.kts:
 ```kts
 plugins {
    id("com.google.devtools.ksp") version "<ksp-version>"

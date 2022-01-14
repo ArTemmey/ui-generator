@@ -14,14 +14,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ProgressBar
-            isVisible="@{viewModel.countDownIsLoading}"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center" />
-
         <TextView
-            isVisible="@{!viewModel.countDownIsLoading &amp;&amp; viewModel.countDown > 0}"
+            isVisible="@{viewModel.countDown > 0}"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -31,7 +25,7 @@
             tools:text="3..2..1" />
 
         <LinearLayout
-            isVisible="@{!viewModel.countDownIsLoading &amp;&amp; viewModel.countDown == 0}"
+            isVisible="@{viewModel.countDown == 0}"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
