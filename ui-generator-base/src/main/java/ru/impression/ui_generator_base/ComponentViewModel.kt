@@ -12,6 +12,8 @@ import kotlin.reflect.full.hasAnnotation
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
+    internal val delegates = ArrayList<StateDelegate<*, *>>()
+
     internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
 
     @PublishedApi
@@ -28,8 +30,10 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
-        StateDelegate(this, initialValue, onChanged)
-            .also { delegate -> attr?.let { delegateToAttrs[delegate] = it } }
+        StateDelegate(this, initialValue, onChanged).also { delegate ->
+            delegates.add(delegate)
+            attr?.let { delegateToAttrs[delegate] = it }
+        }
 
     @CallSuper
     override fun onStateChanged(renderImmediately: Boolean) {
@@ -130,7 +134,10 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     open fun onRestoreInstanceState(savedInstanceState: Parcelable?) = Unit
 
-    public override fun onCleared() = Unit
+    @CallSuper
+    public override fun onCleared() {
+        delegates.forEach { it.stopObserveValue() }
+    }
 
     protected fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
         set(value)

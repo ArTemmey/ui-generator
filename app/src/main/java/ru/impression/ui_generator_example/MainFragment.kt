@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import ru.impression.ui_generator_annotations.MakeComponent
 import ru.impression.ui_generator_annotations.Prop
 import ru.impression.ui_generator_base.*
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 @MakeComponent
 class MainFragment :
@@ -53,6 +55,11 @@ class MainFragmentViewModel : CoroutineViewModel() {
 
     @Prop
     var greetingStructure by state<GreetingStructure?>(null)
+
+    fun changeGreetingAddressee() {
+        greetingStructure?.greetingAddresseeState =
+            arrayOf("world", "my friend", "universe").random()
+    }
 
 
     var count by state(0) { showToast("Count is $it!") }

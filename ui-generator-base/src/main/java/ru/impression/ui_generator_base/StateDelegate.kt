@@ -2,7 +2,6 @@ package ru.impression.ui_generator_base
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -31,6 +30,7 @@ open class StateDelegate<R : StateOwner, T>(
     private var loadJob: Job? = null
 
     init {
+        observeValue()
         when {
             loadValue != null -> load(false)
             valueFlow != null -> collectValueFlow()
@@ -72,10 +72,20 @@ open class StateDelegate<R : StateOwner, T>(
         value: T,
         property: KProperty<*>? = getProperty()
     ) {
+        stopObserveValue()
         this.value = value
+        observeValue()
         parent.onStateChanged()
         if (property?.findAnnotation<Prop>()?.twoWay == true)
             (parent as? ComponentViewModel)?.notifyTwoWayPropChanged(property.name)
         onChanged?.invoke(value)
+    }
+
+    private fun observeValue() {
+        (this.value as? ObservableEntity)?.addStateOwner(parent)
+    }
+
+    fun stopObserveValue() {
+        (this.value as? ObservableEntity)?.removeStateOwner(parent)
     }
 }
