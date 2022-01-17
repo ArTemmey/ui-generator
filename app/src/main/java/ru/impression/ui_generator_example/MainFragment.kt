@@ -37,18 +37,19 @@ class MainFragment :
 
 class MainFragmentViewModel : CoroutineViewModel() {
 
-    var countDown by state(
-        MutableStateFlow(3).apply {
-            launch {
-                delay(1000)
-                emit(2)
-                delay(1000)
-                emit(1)
-                delay(1000)
-                emit(0)
-            }
-        }
-    )
+    var countDown by state(flow {
+        delay(1000)
+        emit(3)
+        delay(1000)
+        emit(2)
+        delay(1000)
+        emit(1)
+        delay(1000)
+        emit(0)
+    })
+
+    val countDownIsLoading get() = ::countDown.isLoading
+
 
     @Prop
     var welcomeText by state<String?>(null)

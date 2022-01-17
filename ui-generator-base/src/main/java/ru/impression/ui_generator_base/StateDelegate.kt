@@ -2,6 +2,7 @@ package ru.impression.ui_generator_base
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -15,7 +16,7 @@ open class StateDelegate<R : StateOwner, T>(
     initialValue: T,
     val onChanged: ((T) -> Unit)?,
     val loadValue: (suspend () -> T)? = null,
-    val valueFlow: StateFlow<T>? = null
+    val valueFlow: Flow<T>? = null
 ) : ReadWriteProperty<R, T> {
 
     @Volatile

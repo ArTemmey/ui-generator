@@ -12,6 +12,10 @@ abstract class CoroutineViewModel(attrs: IntArray? = null) : ComponentViewModel(
         StateDelegate(this, null, onChanged, loadValue = loadValue)
             .also { delegates.add(it) }
 
+    protected fun <T> state(valueFlow: Flow<T>, onChanged: ((T?) -> Unit)? = null) =
+        StateDelegate(this, null, onChanged, valueFlow = valueFlow)
+            .also { delegates.add(it) }
+
     protected fun <T> state(valueFlow: StateFlow<T>, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, valueFlow.value, onChanged, valueFlow = valueFlow)
             .also { delegates.add(it) }
