@@ -55,6 +55,7 @@ class UIGenerator(
                 when (downwardClass.toClassName().canonicalName) {
                     "android.view.View" -> {
                         resultClass = ViewComponentClassBuilder(
+                            logger,
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
@@ -67,6 +68,7 @@ class UIGenerator(
                     }
                     "androidx.fragment.app.Fragment" -> {
                         resultClass = FragmentComponentClassBuilder(
+                            logger,
                             classDeclaration,
                             resultClassName,
                             resultClassPackageName,
