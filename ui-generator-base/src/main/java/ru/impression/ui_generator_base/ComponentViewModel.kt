@@ -5,10 +5,8 @@ import android.os.Looper
 import android.os.Parcelable
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
-import ru.impression.syncable_entity.SingletonEntity
-import ru.impression.syncable_entity.SingletonEntityDelegate
-import ru.impression.syncable_entity.SingletonEntityParent
-import ru.impression.syncable_entity.SingletonEntityParentImpl
+import ru.impression.singleton_entity.SingletonEntity
+import ru.impression.singleton_entity.SingletonEntityDelegate
 import ru.impression.ui_generator_annotations.SharedViewModel
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.full.hasAnnotation

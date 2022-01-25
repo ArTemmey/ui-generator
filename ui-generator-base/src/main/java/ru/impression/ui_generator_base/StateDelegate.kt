@@ -5,7 +5,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import ru.impression.syncable_entity.SingletonEntity
+import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

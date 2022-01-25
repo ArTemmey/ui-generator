@@ -1,7 +1,7 @@
 package ru.impression.ui_generator_base
 
-import ru.impression.syncable_entity.SingletonEntity
-import ru.impression.syncable_entity.SingletonEntityDelegate
+import ru.impression.singleton_entity.SingletonEntity
+import ru.impression.singleton_entity.SingletonEntityDelegate
 
 interface ObservableEntity : StateOwner {
 
