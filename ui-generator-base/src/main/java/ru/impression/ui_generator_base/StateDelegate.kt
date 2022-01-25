@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import ru.impression.singleton_entity.SingletonEntity
+import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -13,6 +14,7 @@ import kotlin.reflect.full.findAnnotation
 
 class StateDelegate<R : StateOwner, T>(
     val parent: R,
+    private val singletonEntityParent: SingletonEntityParent,
     initialValue: T,
     private val onChanged: ((T) -> Unit)?,
     val loadValue: (suspend () -> T)? = null,
@@ -84,11 +86,11 @@ class StateDelegate<R : StateOwner, T>(
 
     private fun observeValue() {
         (this.value as? ObservableEntity)?.addStateOwner(parent)
-        (this.value as? SingletonEntity)?.addParent(parent)
+        (this.value as? SingletonEntity)?.addParent(singletonEntityParent)
     }
 
     fun stopObserveValue() {
         (this.value as? ObservableEntity)?.removeStateOwner(parent)
-        (this.value as? SingletonEntity)?.removeParent(parent)
+        (this.value as? SingletonEntity)?.removeParent(singletonEntityParent)
     }
 }

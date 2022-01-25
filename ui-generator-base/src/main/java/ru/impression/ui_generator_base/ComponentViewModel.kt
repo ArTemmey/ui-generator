@@ -7,6 +7,7 @@ import androidx.annotation.CallSuper
 import androidx.lifecycle.*
 import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityDelegate
+import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.SharedViewModel
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.full.hasAnnotation
@@ -34,8 +35,22 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
 
+    internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
+        override fun detachFromEntities() {
+            this@ComponentViewModel.detachFromEntities()
+        }
+
+        override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
+            this@ComponentViewModel.replace(oldEntity, newEntity)
+        }
+
+        override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
+            this@ComponentViewModel.singletonEntity(initialValue)
+    }
+
+
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
-        StateDelegate(this, initialValue, onChanged).also { delegate ->
+        StateDelegate(this, singletonEntityParent, initialValue, onChanged).also { delegate ->
             delegates.add(delegate)
             attr?.let { delegateToAttrs[delegate] = it }
         }
@@ -141,7 +156,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
 
     override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
-        SingletonEntityDelegate(this, initialValue).also { singletonEntityDelegates.add(it) }
+        SingletonEntityDelegate(singletonEntityParent, initialValue)
+            .also { singletonEntityDelegates.add(it) }
 
     override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
         singletonEntityDelegates.forEach {
@@ -155,7 +171,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     override fun detachFromEntities() {
-        singletonEntityDelegates.forEach { it.value?.removeParent(this) }
+        singletonEntityDelegates.forEach { it.value?.removeParent(singletonEntityParent) }
         delegates.forEach { it.stopObserveValue() }
     }
 
