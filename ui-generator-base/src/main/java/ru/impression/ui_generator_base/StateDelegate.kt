@@ -3,18 +3,18 @@ package ru.impression.ui_generator_base
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import ru.impression.syncable_entity.SingletonEntity
 import ru.impression.ui_generator_annotations.Prop
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
 
-open class StateDelegate<R : StateOwner, T>(
+class StateDelegate<R : StateOwner, T>(
     val parent: R,
     initialValue: T,
-    val onChanged: ((T) -> Unit)?,
+    private val onChanged: ((T) -> Unit)?,
     val loadValue: (suspend () -> T)? = null,
     val valueFlow: Flow<T>? = null
 ) : ReadWriteProperty<R, T> {
@@ -84,9 +84,11 @@ open class StateDelegate<R : StateOwner, T>(
 
     private fun observeValue() {
         (this.value as? ObservableEntity)?.addStateOwner(parent)
+        (this.value as? SingletonEntity)?.addParent(parent)
     }
 
     fun stopObserveValue() {
         (this.value as? ObservableEntity)?.removeStateOwner(parent)
+        (this.value as? SingletonEntity)?.removeParent(parent)
     }
 }

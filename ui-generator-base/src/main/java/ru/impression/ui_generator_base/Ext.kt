@@ -123,18 +123,6 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     }
 }
 
-fun KClass<out ViewDataBinding>.inflate(context: Context, root: ViewGroup?, attachToRoot: Boolean) =
-    try {
-        (java.getDeclaredMethod(
-            "inflate",
-            LayoutInflater::class.java,
-            ViewGroup::class.java,
-            Boolean::class.javaPrimitiveType
-        ).invoke(null, LayoutInflater.from(context), root, attachToRoot) as? ViewDataBinding)
-    } catch (e: NoSuchMethodException) {
-        null
-    }
-
 fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
     val method = viewModel
         ?.let {
