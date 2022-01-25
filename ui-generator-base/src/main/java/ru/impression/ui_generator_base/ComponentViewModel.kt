@@ -37,17 +37,24 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
         override fun detachFromEntities() {
-            this@ComponentViewModel.detachFromEntities()
+            onClearedInternal()
         }
 
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
-            this@ComponentViewModel.replace(oldEntity, newEntity)
+            singletonEntityDelegates.forEach {
+                if (it.value === oldEntity)
+                    (it as SingletonEntityDelegate<SingletonEntity>).setValue(newEntity)
+            }
+            delegates.forEach {
+                if (it.value === oldEntity)
+                    (it as StateDelegate<*, SingletonEntity>).setValue(newEntity)
+            }
         }
 
         override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
-            this@ComponentViewModel.singletonEntity(initialValue)
+            SingletonEntityDelegate(this, initialValue)
+                .also { singletonEntityDelegates.add(it) }
     }
-
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
         StateDelegate(this, singletonEntityParent, initialValue, onChanged).also { delegate ->
@@ -154,31 +161,14 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     open fun onRestoreInstanceState(savedInstanceState: Parcelable?) = Unit
 
-
-    private fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
-        SingletonEntityDelegate(singletonEntityParent, initialValue)
-            .also { singletonEntityDelegates.add(it) }
-
-    private fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
-        singletonEntityDelegates.forEach {
-            if (it.value === oldEntity)
-                (it as SingletonEntityDelegate<SingletonEntity>).setValue(newEntity)
-        }
-        delegates.forEach {
-            if (it.value === oldEntity)
-                (it as StateDelegate<*, SingletonEntity>).setValue(newEntity)
-        }
-    }
-
-    private fun detachFromEntities() {
+    private fun onClearedInternal() {
         singletonEntityDelegates.forEach { it.value?.removeParent(singletonEntityParent) }
         delegates.forEach { it.stopObserveValue() }
     }
 
-
     @CallSuper
     public override fun onCleared() {
-        detachFromEntities()
+        onClearedInternal()
     }
 
     protected fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
