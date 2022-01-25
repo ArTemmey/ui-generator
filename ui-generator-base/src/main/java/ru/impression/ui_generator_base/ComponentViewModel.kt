@@ -155,11 +155,11 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     open fun onRestoreInstanceState(savedInstanceState: Parcelable?) = Unit
 
 
-    override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
+    private fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
         SingletonEntityDelegate(singletonEntityParent, initialValue)
             .also { singletonEntityDelegates.add(it) }
 
-    override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
+    private fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
         singletonEntityDelegates.forEach {
             if (it.value === oldEntity)
                 (it as SingletonEntityDelegate<SingletonEntity>).setValue(newEntity)
@@ -170,7 +170,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
         }
     }
 
-    override fun detachFromEntities() {
+    private fun detachFromEntities() {
         singletonEntityDelegates.forEach { it.value?.removeParent(singletonEntityParent) }
         delegates.forEach { it.stopObserveValue() }
     }
