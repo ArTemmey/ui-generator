@@ -78,6 +78,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
     implementation("com.github.ArtemiyDmtrvch:kotlin-delegate-concatenator:cf5890d227")
-    implementation("com.github.ArTemmey:singleton-entity:ea71307a4d")
+    implementation("com.github.ArTemmey:singleton-entity:cdf2c9477f")
     api("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 }

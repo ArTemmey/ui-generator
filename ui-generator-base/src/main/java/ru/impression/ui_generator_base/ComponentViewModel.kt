@@ -9,6 +9,7 @@ import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityDelegate
 import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.SharedViewModel
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.full.hasAnnotation
 
@@ -16,11 +17,11 @@ import kotlin.reflect.full.hasAnnotation
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
-    internal val delegates = ArrayList<StateDelegate<*, *>>()
+    internal val delegates = CopyOnWriteArrayList<StateDelegate<*, *>>()
 
     internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
 
-    private val singletonEntityDelegates = ArrayList<SingletonEntityDelegate<*>>()
+    private val singletonEntityDelegates = CopyOnWriteArrayList<SingletonEntityDelegate<*>>()
 
     @PublishedApi
     internal var _component: Component<*, *>? = null
@@ -36,10 +37,12 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
 
     internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
+        @Synchronized
         override fun detachFromEntities() {
             onClearedInternal()
         }
 
+        @Synchronized
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
             singletonEntityDelegates.forEach {
                 if (it.value === oldEntity)

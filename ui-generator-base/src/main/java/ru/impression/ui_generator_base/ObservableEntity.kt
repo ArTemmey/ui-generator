@@ -3,6 +3,7 @@ package ru.impression.ui_generator_base
 import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityDelegate
 import ru.impression.singleton_entity.SingletonEntityParent
+import java.util.concurrent.CopyOnWriteArrayList
 
 interface ObservableEntity : StateOwner {
 
@@ -18,14 +19,16 @@ interface ObservableEntity : StateOwner {
 
 class ObservableEntityImpl : ObservableEntity {
     private val stateOwners = ArrayList<StateOwner>()
-    private val delegates = ArrayList<StateDelegate<*, *>>()
-    private val singletonEntityDelegates = ArrayList<SingletonEntityDelegate<*>>()
+    private val delegates = CopyOnWriteArrayList<StateDelegate<*, *>>()
+    private val singletonEntityDelegates = CopyOnWriteArrayList<SingletonEntityDelegate<*>>()
     private val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
+        @Synchronized
         override fun detachFromEntities() {
             singletonEntityDelegates.forEach { it.value?.removeParent(this) }
             delegates.forEach { it.stopObserveValue() }
         }
 
+        @Synchronized
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
             singletonEntityDelegates.forEach {
                 if (it.value === oldEntity)
