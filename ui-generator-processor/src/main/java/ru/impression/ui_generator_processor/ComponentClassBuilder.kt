@@ -1,6 +1,7 @@
 package ru.impression.ui_generator_processor
 
 import com.google.devtools.ksp.*
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.*
@@ -12,6 +13,7 @@ import kotlin.collections.ArrayList
 
 @OptIn(KotlinPoetKspPreview::class)
 abstract class ComponentClassBuilder(
+    protected val logger: KSPLogger,
     protected val scheme: KSClassDeclaration,
     protected val resultClassName: String,
     protected val resultClassPackage: String,
@@ -31,8 +33,11 @@ abstract class ComponentClassBuilder(
                 ?: return@apply
 
             properties.forEach { viewModelElement ->
+                logger.info("Expecting ${downwardViewModelClass?.qualifiedName?.asString()}")
+
                 viewModelElement.getAnnotationsByType(Prop::class).firstOrNull()
                     ?.let { annotation ->
+                        logger.info("Expecting ${viewModelElement.simpleName.asString()}")
 
                         val propertyGetter = viewModelElement.getter
                         val propertyName = propertyGetter.toString().substringBefore(".")

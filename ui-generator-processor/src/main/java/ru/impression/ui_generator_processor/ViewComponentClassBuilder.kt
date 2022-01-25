@@ -1,5 +1,6 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
@@ -8,12 +9,14 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 
 @OptIn(KotlinPoetKspPreview::class)
 class ViewComponentClassBuilder(
+    logger: KSPLogger,
     scheme: KSClassDeclaration,
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
     viewModelClass: KSClassDeclaration
 ) : ComponentClassBuilder(
+    logger,
     scheme,
     resultClassName,
     resultClassPackage,
