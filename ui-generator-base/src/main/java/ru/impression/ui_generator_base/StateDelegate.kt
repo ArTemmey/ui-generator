@@ -5,7 +5,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import ru.impression.singleton_entity.EntityStore
 import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.Prop
@@ -76,10 +75,6 @@ class StateDelegate<R : StateOwner, T>(
         value: T,
         property: KProperty<*>? = getProperty()
     ) {
-        if (value is SingletonEntity
-            && !EntityStore.contains(value)
-            && this.value.let { it is SingletonEntity && EntityStore.contains(it) }
-        ) return
         stopObserveValue()
         this.value = value
         observeValue()
@@ -89,7 +84,7 @@ class StateDelegate<R : StateOwner, T>(
         onChanged?.invoke(value)
     }
 
-    private fun observeValue() {
+    fun observeValue() {
         (this.value as? ObservableEntity)?.addStateOwner(parent)
         (this.value as? SingletonEntity)?.addParent(singletonEntityParent)
     }

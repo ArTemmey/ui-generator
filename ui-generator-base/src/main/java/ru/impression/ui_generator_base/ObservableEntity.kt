@@ -19,30 +19,14 @@ interface ObservableEntity : StateOwner {
 
 class ObservableEntityImpl : ObservableEntity {
     private val stateOwners = ArrayList<StateOwner>()
-    private val delegates = CopyOnWriteArrayList<StateDelegate<*, *>>()
-    private val singletonEntityDelegates = CopyOnWriteArrayList<SingletonEntityDelegate<*>>()
+    private val delegates = ArrayList<StateDelegate<*, *>>()
     private val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
-        @Synchronized
-        override fun detachFromEntities() {
-            singletonEntityDelegates.forEach { it.value?.removeParent(this) }
-            delegates.forEach { it.stopObserveValue() }
-        }
-
-        @Synchronized
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
-            singletonEntityDelegates.forEach {
-                if (it.value === oldEntity)
-                    (it as SingletonEntityDelegate<SingletonEntity>).setValue(newEntity)
-            }
             delegates.forEach {
                 if (it.value === oldEntity)
                     (it as StateDelegate<*, SingletonEntity>).setValue(newEntity)
             }
         }
-
-        override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
-            SingletonEntityDelegate(this, initialValue)
-                .also { singletonEntityDelegates.add(it) }
     }
 
     override fun <T> state(initialValue: T, onChanged: ((T) -> Unit)?) =

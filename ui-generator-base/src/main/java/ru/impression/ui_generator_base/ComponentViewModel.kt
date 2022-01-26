@@ -4,12 +4,13 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
 import androidx.annotation.CallSuper
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModel
 import ru.impression.singleton_entity.SingletonEntity
-import ru.impression.singleton_entity.SingletonEntityDelegate
 import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.SharedViewModel
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.full.hasAnnotation
 
@@ -17,11 +18,9 @@ import kotlin.reflect.full.hasAnnotation
 abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), StateOwner,
     LifecycleEventObserver {
 
-    internal val delegates = CopyOnWriteArrayList<StateDelegate<*, *>>()
+    internal val delegates = ArrayList<StateDelegate<*, *>>()
 
     internal val delegateToAttrs = HashMap<StateDelegate<*, *>, Int>()
-
-    private val singletonEntityDelegates = CopyOnWriteArrayList<SingletonEntityDelegate<*>>()
 
     @PublishedApi
     internal var _component: Component<*, *>? = null
@@ -37,26 +36,12 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
 
     internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
-        @Synchronized
-        override fun detachFromEntities() {
-            onClearedInternal()
-        }
-
-        @Synchronized
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
-            singletonEntityDelegates.forEach {
-                if (it.value === oldEntity)
-                    (it as SingletonEntityDelegate<SingletonEntity>).setValue(newEntity)
-            }
             delegates.forEach {
                 if (it.value === oldEntity)
                     (it as StateDelegate<*, SingletonEntity>).setValue(newEntity)
             }
         }
-
-        override fun <T : SingletonEntity?> singletonEntity(initialValue: T) =
-            SingletonEntityDelegate(this, initialValue)
-                .also { singletonEntityDelegates.add(it) }
     }
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
@@ -90,6 +75,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     fun restoreSubscriptions() {
+        delegates.forEach { it.observeValue() }
         subscriptionsInitializers.forEach { it() }
     }
 
@@ -164,14 +150,9 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     open fun onRestoreInstanceState(savedInstanceState: Parcelable?) = Unit
 
-    private fun onClearedInternal() {
-        singletonEntityDelegates.forEach { it.value?.removeParent(singletonEntityParent) }
-        delegates.forEach { it.stopObserveValue() }
-    }
-
     @CallSuper
     public override fun onCleared() {
-        onClearedInternal()
+        delegates.forEach { it.stopObserveValue() }
     }
 
     protected fun <T> KMutableProperty0<T>.set(value: T, renderImmediately: Boolean = false) {
