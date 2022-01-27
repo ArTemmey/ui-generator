@@ -27,6 +27,10 @@ publishing {
         register("mavenJava", MavenPublication::class) {
             from(components["java"])
             artifact(sourcesJar.get())
+
+//            groupId = "com.github.ArtemiyDmtrvch"
+//            artifactId = "ui-generator-processor"
+//            version = "LOCAL"
         }
     }
 }

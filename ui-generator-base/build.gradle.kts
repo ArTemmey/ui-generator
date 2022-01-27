@@ -55,15 +55,14 @@ afterEvaluate {
             maven(url = "https://jitpack.io")
         }
         publications {
-            create<MavenPublication>("debug") {
-                // Applies the component for the release build variant.
-                from(components["debug"])
-                artifact(sourcesJar)
-            }
-            create<MavenPublication>("release") {
+            create<MavenPublication>("pub") {
                 // Applies the component for the release build variant.
                 from(components["release"])
                 artifact(sourcesJar)
+
+//                groupId = "com.github.ArtemiyDmtrvch"
+//                artifactId = "ui-generator-base"
+//                version = "LOCAL"
             }
         }
     }
@@ -78,6 +77,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
     implementation("com.github.ArtemiyDmtrvch:kotlin-delegate-concatenator:cf5890d227")
-    implementation("com.github.ArTemmey:singleton-entity:c407d55add")
+    implementation("com.github.ArTemmey:singleton-entity:47d6a435a3")
     api("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 }
