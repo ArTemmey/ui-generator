@@ -182,8 +182,9 @@ class FragmentComponentClassBuilder(
         addModifiers(KModifier.OVERRIDE)
         addCode(
             """
-                super.onDestroyView()
+                container = null
                 dataBindingManager.releaseBinding()
+                super.onDestroyView()
                 """.trimIndent()
         )
         build()
