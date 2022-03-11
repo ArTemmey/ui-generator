@@ -27,7 +27,7 @@ abstract class CoroutineViewModel(attrs: IntArray? = null) : ComponentViewModel(
 
     @CallSuper
     override fun onCleared() {
-        super.onCleared()
         clear()
+        super.onCleared()
     }
 }
