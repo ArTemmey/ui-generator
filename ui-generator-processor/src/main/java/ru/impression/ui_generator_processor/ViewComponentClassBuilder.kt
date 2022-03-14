@@ -190,10 +190,10 @@ class ViewComponentClassBuilder(
             addModifiers(KModifier.OVERRIDE)
             addCode(
                 """
-                    super.onDetachedFromWindow()
                     lifecycle.handleLifecycleEvent(%T.Event.ON_DESTROY)
                     viewModel.onCleared()
                     isDetachedFromWindow = true
+                    super.onDetachedFromWindow()
                     """.trimIndent(),
                 ClassName("androidx.lifecycle", "Lifecycle")
             )
