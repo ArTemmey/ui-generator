@@ -18,7 +18,7 @@ interface ObservableEntity : StateOwner {
 }
 
 class ObservableEntityImpl : ObservableEntity {
-    private val stateOwners = ArrayList<StateOwner>()
+    private val stateOwners = CopyOnWriteArrayList<StateOwner>()
     private val delegates = ArrayList<StateDelegate<*, *>>()
     private val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
@@ -42,6 +42,6 @@ class ObservableEntityImpl : ObservableEntity {
     }
 
     override fun onStateChanged(renderImmediately: Boolean) {
-        stateOwners.forEach { it.onStateChanged(renderImmediately) }
+        stateOwners.forEach { it?.onStateChanged(renderImmediately) }
     }
 }
