@@ -101,7 +101,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("DataBindingManager(this)")
+        initializer("DataBindingManager(this, ${resultClassPackage}.BR.viewModel)")
         build()
     }
 

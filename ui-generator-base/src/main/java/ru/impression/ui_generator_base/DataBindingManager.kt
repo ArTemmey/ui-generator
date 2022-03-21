@@ -9,7 +9,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 
-class DataBindingManager(private val component: Component<*, *>) {
+class DataBindingManager(private val component: Component<*, *>, private val viewModelVariableId: Int) {
 
     private val context by lazy {
         (component as? Fragment)?.context ?: (component as? View)?.context
@@ -30,7 +30,7 @@ class DataBindingManager(private val component: Component<*, *>) {
         currentBinding?.let {
             if (newLayoutResId != null && newLayoutResId == currentLayoutResId) {
                 if (rebindViewModel) {
-                    it.setViewModel(component.viewModel)
+                    it.setVariable(viewModelVariableId, component.viewModel)
                     if (executeBindingsImmediately) it.executePendingBindings()
                 }
                 return it
@@ -59,9 +59,7 @@ class DataBindingManager(private val component: Component<*, *>) {
 
     private fun ViewDataBinding.prepare(executeBindings: Boolean) {
         this.lifecycleOwner = component.boundLifecycleOwner
-        setViewModel(component.viewModel)
-        setVariable("component", component)
-        setVariable("context", context)
+        setVariable(viewModelVariableId, component.viewModel)
         if (executeBindings) executePendingBindings()
     }
 

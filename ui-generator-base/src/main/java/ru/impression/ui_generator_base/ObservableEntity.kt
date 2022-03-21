@@ -4,13 +4,16 @@ import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityDelegate
 import ru.impression.singleton_entity.SingletonEntityParent
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.properties.PropertyDelegateProvider
+import kotlin.reflect.KProperty
+
 
 interface ObservableEntity : StateOwner {
 
     fun <T> state(
         initialValue: T,
         onChanged: ((T) -> Unit)? = null
-    ): StateDelegate<ObservableEntity, T>
+    ): PropertyDelegateProvider<ObservableEntity, StateDelegate<ObservableEntity, T>>
 
     fun addStateOwner(stateOwner: StateOwner)
 
@@ -30,10 +33,19 @@ class ObservableEntityImpl : ObservableEntity {
     }
 
     override fun <T> state(initialValue: T, onChanged: ((T) -> Unit)?) =
-        StateDelegate(this, singletonEntityParent, initialValue, onChanged)
-            .also { delegates.add(it) } as StateDelegate<ObservableEntity, T>
+        PropertyDelegateProvider<ObservableEntity, StateDelegate<ObservableEntity, T>> { _, property ->
+            StateDelegate(
+                parent = this@ObservableEntityImpl,
+                singletonEntityParent = singletonEntityParent,
+                initialValue = initialValue,
+                onChanged = onChanged,
+                property = property
+            )
+                .also { delegates.add(it) } as StateDelegate<ObservableEntity, T>
+        }
 
     override fun addStateOwner(stateOwner: StateOwner) {
+
         stateOwners.add(stateOwner)
     }
 

@@ -2,19 +2,15 @@
 
 package ru.impression.ui_generator_base
 
-import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
-import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -25,12 +21,9 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
-import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
 
 val View.activity: AppCompatActivity?
@@ -82,8 +75,8 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     with(context.theme.obtainStyledAttributes(attrs, viewModel.attrs ?: return, 0, 0)) {
         try {
             for (delegateToAttr in viewModel.delegateToAttrs) {
-                val property = delegateToAttr.key.getProperty()
-                val classifier = property?.returnType?.classifier as? KClass<*> ?: continue
+                val property = delegateToAttr.key.property
+                val classifier = property.returnType.classifier as? KClass<*> ?: continue
                 property as KMutableProperty1<Any?, Any?>
                 val value = when (classifier) {
                     Boolean::class -> getBoolean(
@@ -123,36 +116,6 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     }
 }
 
-fun ViewDataBinding.setViewModel(viewModel: ComponentViewModel?) {
-    val method = viewModel
-        ?.let {
-            try {
-                this::class.java.getDeclaredMethod("setViewModel", it::class.java)
-            } catch (e: NoSuchMethodException) {
-                null
-            }
-        }
-        ?: this::class.java.declaredMethods
-            .firstOrNull { it.name == "setViewModel" && it.parameterTypes.size == 1 }
-    method?.invoke(this, viewModel)
-}
-
-fun ViewDataBinding.setVariable(name: String, value: Any?) {
-    val setterName = "set${name.capitalize(Locale.getDefault())}"
-    this::class.java.declaredMethods.firstOrNull {
-        val parameterTypes = it.parameterTypes
-        it.name == setterName
-                && parameterTypes.size == 1
-                && if (value != null) parameterTypes[0].isAssignableFrom(value::class.java) else true
-    }?.invoke(this, value)
-}
-
-fun <R : StateOwner, T> StateDelegate<R, T>.getProperty() =
-    (parent::class.declaredMemberProperties.firstOrNull {
-        (it as? KProperty1<R, *>)
-            ?.getDelegateFromSum<R, StateDelegate<*, *>>(parent) == this
-    } as KMutableProperty1<R, T>?)
-
 fun <T> KMutableProperty0<T>.nullSafetySet(value: T?) {
     if (!this.returnType.isMarkedNullable && value == null) return
     set(value as T)
@@ -163,14 +126,6 @@ val KMutableProperty0<*>.isLoading: Boolean
 
 fun KMutableProperty0<*>.reload(): Job =
     getDelegateFromSum<StateDelegate<*, *>>()!!.load(true)
-
-fun ViewDataBinding.bindViewModel(viewModel: ComponentViewModel?) {
-    setViewModel(viewModel)
-    viewModel?.addStateObserver(lifecycleOwner ?: return) {
-        setViewModel(viewModel)
-        executePendingBindings()
-    }
-}
 
 fun View.asLifecycleOwner() = ViewLifecycleOwner(this)
 

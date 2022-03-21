@@ -18,7 +18,8 @@ class StateDelegate<R : StateOwner, T>(
     initialValue: T,
     private val onChanged: ((T) -> Unit)?,
     val loadValue: (suspend () -> T)? = null,
-    val valueFlow: Flow<T>? = null
+    val valueFlow: Flow<T>? = null,
+    val property: KProperty<*>
 ) : ReadWriteProperty<R, T> {
 
     @Volatile
@@ -67,19 +68,18 @@ class StateDelegate<R : StateOwner, T>(
 
     @Synchronized
     override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
-        setValue(value, property)
+        setValue(value)
     }
 
     @Synchronized
     fun setValue(
-        value: T,
-        property: KProperty<*>? = getProperty()
+        value: T
     ) {
         stopObserveValue()
         this.value = value
         observeValue()
         parent.onStateChanged()
-        if (property?.findAnnotation<Prop>()?.twoWay == true)
+        if (property.findAnnotation<Prop>()?.twoWay == true)
             (parent as? ComponentViewModel)?.notifyTwoWayPropChanged(property.name)
         onChanged?.invoke(value)
     }
