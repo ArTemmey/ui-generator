@@ -116,13 +116,9 @@ fun <T, VM : ComponentViewModel> T.resolveAttrs(attrs: AttributeSet?) where T : 
     }
 }
 
-fun <T> KMutableProperty0<T>.nullSafetySet(value: T?) {
-    if (!this.returnType.isMarkedNullable && value == null) return
-    set(value as T)
-}
-
 val KMutableProperty0<*>.isLoading: Boolean
     get() = getDelegateFromSum<StateDelegate<*, *>>()?.isLoading == true
+
 
 fun KMutableProperty0<*>.reload(): Job =
     getDelegateFromSum<StateDelegate<*, *>>()!!.load(true)

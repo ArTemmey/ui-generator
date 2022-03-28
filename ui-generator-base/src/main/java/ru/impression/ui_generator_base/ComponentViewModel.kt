@@ -8,6 +8,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
+import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.SharedViewModel
@@ -36,6 +37,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     private val stateObserversNotifier = Runnable { notifyStateObservers(true) }
 
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
+
+    var propsAreSet = false
 
     internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
@@ -141,7 +144,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
                 throw IllegalArgumentException("ViewModel must have SharedViewModel annotation")
             component == null ->
                 throw IllegalStateException("Cannot get ViewModel when detached from component")
-            else -> component.createViewModel(viewModelClass)
+            else -> component.createViewModel(viewModelClass, true)
         }
     }
 

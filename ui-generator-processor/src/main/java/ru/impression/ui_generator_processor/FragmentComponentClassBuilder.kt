@@ -1,10 +1,14 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.squareup.kotlinpoet.ksp.toTypeName
+import ru.impression.ui_generator_annotations.SharedViewModel
 
 @OptIn(KotlinPoetKspPreview::class)
 class FragmentComponentClassBuilder(
@@ -23,34 +27,46 @@ class FragmentComponentClassBuilder(
     viewModelClass
 ) {
 
+    @OptIn(KspExperimental::class)
     override fun buildViewModelProperty() =
         with(PropertySpec.builder("viewModel", viewModelClass.toClassName())) {
             addModifiers(KModifier.OVERRIDE)
-            delegate(if (propProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class) } ") else
+            delegate(if (propProperties.isEmpty()) CodeBlock.of("lazy { createViewModel($viewModelClass::class, ${viewModelClass.isAnnotationPresent(SharedViewModel::class)}) } ") else
                 with(CodeBlock.builder()) {
                     add(
                         """
                         lazy { 
-                          val viewModel = createViewModel($viewModelClass::class)
+                          val viewModel = createViewModel($viewModelClass::class, ${viewModelClass.isAnnotationPresent(SharedViewModel::class)})
                         
                         """.trimIndent()
                     )
-                    propProperties.forEach {
-                        add(
-                            """
-                                val ${it.name} = ${it.name}
-                                if (${it.name} != null && ${it.name} !== viewModel.${it.name})
-                                  viewModel::${it.name}.%M(${it.name})
-                                  viewModel.onStateChanged(renderImmediately = true)
+                    add("""
+                        if (!viewModel.propsAreSet) {
+                        
+                    """.trimIndent())
+                    propProperties.forEach { prop ->
+                        if (prop.kotlinType.isNullable) {
+                            add("""
+                                viewModel.${prop.name} = ${prop.name}
+                                
+                            """.trimIndent())
 
-                                  """.trimIndent(),
-                            MemberName("ru.impression.ui_generator_base", "nullSafetySet")
-                        )
+                        } else {
+                            add("""
+                                   ${prop.name}?.let { viewModel.${prop.name} = it }
+                                
+                            """.trimIndent())
+                        }
                     }
+                    add("""
+                        viewModel.propsAreSet = true
+                        }
+                        
+                    """.trimIndent())
                     add(
                         """
                             viewModel
-                            }
+                        }
                         """.trimIndent()
                     )
                     build()
@@ -90,7 +106,7 @@ class FragmentComponentClassBuilder(
     private fun buildPropWrapperProperty(propProperty: PropProperty) = with(
         PropertySpec.builder(
             propProperty.name,
-            propProperty.kotlinType
+            propProperty.type.toTypeName().copy(nullable = true)
         )
     ) {
         mutable(true)
@@ -107,7 +123,7 @@ class FragmentComponentClassBuilder(
                 .build()
         )
         setter(
-            FunSpec.setterBuilder().addParameter("value", propProperty.kotlinType).addCode(
+            FunSpec.setterBuilder().addParameter("value", propProperty.type.toTypeName().copy(nullable = true)).addCode(
                 """
                     field = value
                     try {

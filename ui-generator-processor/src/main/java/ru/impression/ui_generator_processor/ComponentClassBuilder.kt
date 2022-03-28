@@ -126,6 +126,6 @@ abstract class ComponentClassBuilder(
         val twoWay: Boolean,
         val attrChangedPropertyName: String
     ) {
-        val kotlinType = type.toTypeName().copy(true)
+        val kotlinType = type.toTypeName()
     }
 }
