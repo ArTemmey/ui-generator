@@ -8,10 +8,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
+import ru.impression.kotlin_delegate_concatenator.getDelegateFromSum
 import ru.impression.singleton_entity.SingletonEntity
 import ru.impression.singleton_entity.SingletonEntityParent
 import ru.impression.ui_generator_annotations.SharedViewModel
+import kotlin.properties.PropertyDelegateProvider
 import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.hasAnnotation
 
 
@@ -35,6 +38,8 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
 
     private val subscriptionsInitializers = ArrayList<(() -> Unit)>()
 
+    var propsAreSet = false
+
     internal val singletonEntityParent: SingletonEntityParent = object : SingletonEntityParent {
         override fun replace(oldEntity: SingletonEntity, newEntity: SingletonEntity) {
             delegates.forEach {
@@ -45,10 +50,19 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
     }
 
     protected fun <T> state(initialValue: T, attr: Int? = null, onChanged: ((T) -> Unit)? = null) =
-        StateDelegate(this, singletonEntityParent, initialValue, onChanged).also { delegate ->
-            delegates.add(delegate)
-            attr?.let { delegateToAttrs[delegate] = it }
+        PropertyDelegateProvider<ComponentViewModel, StateDelegate<ComponentViewModel, T>> { _, property ->
+            StateDelegate(
+                parent = this,
+                singletonEntityParent = singletonEntityParent,
+                initialValue = initialValue,
+                onChanged = onChanged,
+                property = property
+            ).also { delegate ->
+                delegates.add(delegate)
+                attr?.let { delegateToAttrs[delegate] = it }
+            }
         }
+
 
     @CallSuper
     override fun onStateChanged(renderImmediately: Boolean) {
@@ -130,7 +144,7 @@ abstract class ComponentViewModel(val attrs: IntArray? = null) : ViewModel(), St
                 throw IllegalArgumentException("ViewModel must have SharedViewModel annotation")
             component == null ->
                 throw IllegalStateException("Cannot get ViewModel when detached from component")
-            else -> component.createViewModel(viewModelClass)
+            else -> component.createViewModel(viewModelClass, true)
         }
     }
 

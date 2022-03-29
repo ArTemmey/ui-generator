@@ -1,11 +1,14 @@
 package ru.impression.ui_generator_processor
 
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import ru.impression.ui_generator_annotations.SharedViewModel
 
 @OptIn(KotlinPoetKspPreview::class)
 class ViewComponentClassBuilder(
@@ -24,12 +27,13 @@ class ViewComponentClassBuilder(
     viewModelClass
 ) {
 
+    @OptIn(KspExperimental::class)
     override fun buildViewModelProperty() =
         with(
             PropertySpec.builder("viewModel", viewModelClass.toClassName())
         ) {
             addModifiers(KModifier.OVERRIDE)
-            initializer("createViewModel($viewModelClass::class)")
+            initializer("createViewModel($viewModelClass::class, ${viewModelClass.isAnnotationPresent(SharedViewModel::class)})")
             build()
         }
 
@@ -248,14 +252,13 @@ class ViewComponentClassBuilder(
                 ).addMember("%S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            addParameter("value", propProperty.type.toTypeName().copy(true))
+            addParameter("value", propProperty.type.toTypeName())
             addCode(
                 """
                     if (value === view.viewModel.${propProperty.name}) return
-                    view.viewModel::${propProperty.name}.%M(value)
+                    view.viewModel.${propProperty.name} = value
                     view.viewModel.onStateChanged(renderImmediately = true)
-                """.trimIndent(),
-                MemberName("ru.impression.ui_generator_base", "nullSafetySet")
+                """.trimIndent()
             )
             build()
         }
@@ -286,7 +289,7 @@ class ViewComponentClassBuilder(
                 ).addMember("attribute = %S", propProperty.name).build()
             )
             addParameter("view", ClassName(resultClassPackage, resultClassName))
-            returns(propProperty.type.toTypeName().copy(true))
+            returns(propProperty.type.toTypeName())
             addCode("return view.viewModel.${propProperty.name}")
             build()
         }

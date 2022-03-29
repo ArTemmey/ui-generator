@@ -23,14 +23,14 @@ interface Component<C, VM : ComponentViewModel> {
 
     val hooks: Hooks
 
-    fun <T : ViewModel> createViewModel(viewModelClass: KClass<T>): T {
+    fun <T : ViewModel> createViewModel(viewModelClass: KClass<T>, isSharedViewModel: Boolean): T {
         val activity = when (this) {
             is View -> activity
             is Fragment -> activity
             else -> null
         }
         return when {
-            activity != null && viewModelClass.findAnnotation<SharedViewModel>() != null ->
+            activity != null && isSharedViewModel ->
                 ViewModelProvider(activity)[viewModelClass.java]
             activity != null && this is ViewModelStoreOwner ->
                 ViewModelProvider(this)[viewModelClass.java]
