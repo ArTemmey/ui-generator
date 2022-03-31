@@ -20,6 +20,10 @@ plugins {
    id("com.google.devtools.ksp") version "<ksp-version>"
 }
 
+ksp {
+    arg("packageName", "<your-package-name>")
+}
+
 android {
    ...
    dataBinding {

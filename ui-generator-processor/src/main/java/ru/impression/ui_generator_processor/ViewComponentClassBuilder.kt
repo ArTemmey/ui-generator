@@ -17,14 +17,16 @@ class ViewComponentClassBuilder(
     resultClassName: String,
     resultClassPackage: String,
     superclass: TypeName,
-    viewModelClass: KSClassDeclaration
+    viewModelClass: KSClassDeclaration,
+    packageName: String
 ) : ComponentClassBuilder(
     logger,
     scheme,
     resultClassName,
     resultClassPackage,
     superclass,
-    viewModelClass
+    viewModelClass,
+    packageName
 ) {
 
     @OptIn(KspExperimental::class)

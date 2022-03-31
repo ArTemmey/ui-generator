@@ -5,5 +5,5 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 class UIGeneratorProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment) =
-        UIGenerator(environment.codeGenerator, environment.logger)
+        UIGenerator(environment.codeGenerator, environment.logger, environment.options["packageName"]!!)
 }
