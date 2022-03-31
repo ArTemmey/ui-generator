@@ -16,7 +16,8 @@ import java.lang.StringBuilder
 @OptIn(KotlinPoetKspPreview::class)
 class UIGenerator(
     val codeGenerator: CodeGenerator,
-    val logger: KSPLogger
+    val logger: KSPLogger,
+    val packageName: String
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -62,7 +63,8 @@ class UIGenerator(
                             with(superClass.type!!.resolve()) {
                                 toTypeName(declaration.typeParameters.toTypeParameterResolver())
                             },
-                            viewModelClass
+                            viewModelClass,
+                            packageName
                         ).build()
                         break@classIteration
                     }
@@ -75,7 +77,8 @@ class UIGenerator(
                             with(superClass.type!!.resolve()) {
                                 toTypeName(declaration.typeParameters.toTypeParameterResolver())
                             },
-                            viewModelClass
+                            viewModelClass,
+                            packageName
                         ).build()
                         break@classIteration
                     }

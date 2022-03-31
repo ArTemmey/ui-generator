@@ -18,7 +18,8 @@ abstract class ComponentClassBuilder(
     protected val resultClassName: String,
     protected val resultClassPackage: String,
     protected val superclass: TypeName,
-    protected val viewModelClass: KSClassDeclaration
+    protected val viewModelClass: KSClassDeclaration,
+    protected val packageName: String
 ) {
 
     @OptIn(KspExperimental::class)
@@ -101,7 +102,7 @@ abstract class ComponentClassBuilder(
         )
     ) {
         addModifiers(KModifier.OVERRIDE)
-        initializer("DataBindingManager(this, ${resultClassPackage}.BR.viewModel)")
+        initializer("DataBindingManager(this, ${packageName}.BR.viewModel)")
         build()
     }
 

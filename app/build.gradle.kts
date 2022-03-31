@@ -48,6 +48,10 @@ kotlin {
     }
 }
 
+ksp {
+    arg("packageName","ru.impression.ui_generator_example")
+}
+
 dependencies {
     implementation(project(":ui-generator-base"))
     implementation(project(":ui-generator-annotations"))
